@@ -134,3 +134,63 @@ civet_late_dry.a <- data[data$season == "Late Dry" &
 plot_civet_late_dry.a <- civet_late_dry.a$Time.Radians
 #plot the temporal activity of civets in the late dry season post wild dog release
 densityPlot(plot_civet_late_dry.a, rug = TRUE, main = "Civet Activity in the Late Dry Season Post Wild Dog Release")
+
+##################################
+#do the same for Genets
+
+#Genet activity for the wet season pre-wild dog release
+genet_wet.b <- data[data$season == "Wet" &
+                      data$TimePeriod == "PreRelease" & 
+                      data$Species == "Genet",]
+#pick the Time Radians column to use in the temporal activity plot
+plot_genet_wet.b <- genet_wet.b$Time.Radians
+#plot the temporal activity of genets in the wet season pre wild dog release
+densityPlot(plot_genet_wet.b, rug=TRUE, main ="Genet Activity in the Wet Season Pre Wild Dog Release")
+
+
+#genet activity for the early dry season pre-wild dog release
+genet_early_dry.b <- data[data$season == "Early Dry" &
+                            data$TimePeriod == "PreRelease" & 
+                            data$Species == "Genet",]
+#pick the Time Radians column to use in the temporal activity plot
+plot_genet_early_dry.b <- genet_early_dry.b$Time.Radians
+#plot the temporal activity of genets in the early dry season pre wild dog release
+densityPlot(plot_genet_early_dry.b, rug=TRUE, main = "Genet Activity in the Early Dry Season Pre Wild Dog Release")
+
+#Genet activity for the late dry season pre-wild dog release
+genet_late_dry.b <- data[data$season == "Late Dry" &
+                           data$TimePeriod == "PreRelease" & 
+                           data$Species == "Genet",]
+#pick the TimeRadians column to use in the temporal activity plot
+plot_genet_late_dry.b <- genet_late_dry.b$Time.Radians
+#plot the temporal activity of genet in the late dry season pre wild dog release
+densityPlot(plot_genet_late_dry.b, rug=TRUE, main = "Genet Activity in the Late Dry Season")
+
+
+#Genet activity for the wet season post-wild dog release
+genet_wet.a <- data[data$season == "Wet" &
+                      data$TimePeriod == "PostRelease" & 
+                      data$Species == "Genet",]
+#pick the Time Radians column to use in the temporal activity plot
+plot_genet_wet.a <- genet_wet.a$Time.Radians
+#plot the temporal activity of genets in the wet season post wild dog release
+densityPlot(plot_genet_wet.a, rug = TRUE, main = "Genet Activity in the Wet Season Post Wild Dog Release")
+
+#genet activity for the early dry season post-wild dog release
+genet_early_dry.a <- data[data$season == "Early Dry" &
+                            data$TimePeriod == "PostRelease" & 
+                            data$Species == "Genet",]
+
+plot_genet_early_dry.a <- genet_early_dry.a$Time.Radians
+#plot the temporal activity of genets in the early dry season post wild dog release
+densityPlot(plot_genet_early_dry.a, rug = TRUE, main = "Genet Activity in the Early Dry Season Post Wild Dog Release")
+
+#Genet activity for the late dry season post-wild dog release
+genet_late_dry.a <- data[data$season == "Late Dry" &
+                           data$TimePeriod == "PostRelease" & 
+                           data$Species == "Genet",]
+
+plot_genet_late_dry.a <- genet_late_dry.a$Time.Radians
+#plot the temporal activity of genets in the late dry season post wild dog release
+densityPlot(plot_genet_late_dry.a, rug = TRUE, main = "Genet Activity in the Late Dry Season Post Wild Dog Release")
+
