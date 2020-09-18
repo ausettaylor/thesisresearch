@@ -205,42 +205,79 @@ overlapPlot(plot_baboon_wet.b, plot_baboon_wet.a, main = "Baboon Wet Season Acti
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
+#Calculate the 'Coefficient of Overlap' to see temporal overlap for Baboon wet season
+#I'm going to use delta_hat4 estimator because Baboons have thousands of samples
+(BaboonWet_Release_Comparison <- overlapEst(plot_baboon_wet.b, plot_baboon_wet.a, type="Dhat4"))
+#BaboonWet_Release_Comparison = 0.9321808
+
 #Baboons Early Dry Season comparison pre/post AWD release
 overlapPlot(plot_baboon_early_dry.b, plot_baboon_early_dry.a, main = "Baboon Early Dry Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
+
+#Coefficient of Overlap for Baboon early dry season
+(BaboonEarlyDry_Release_Comparison <- overlapEst(plot_baboon_early_dry.b, plot_baboon_early_dry.a, type="Dhat4"))
+#BaboonEarlyDry_Release_Comparison = 0.9419022
 
 #Baboons Late Dry Season comparison pre/post AWD release
 overlapPlot(plot_baboon_late_dry.b, plot_baboon_late_dry.a, main = "Baboon Late Dry Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
+#Coefficient of Overlap for Baboon late dry season
+(BaboonLateDry_Release_Comparison <- overlapEst(plot_baboon_late_dry.b, plot_baboon_late_dry.a, type="Dhat4"))
+#BaboonLateDry_Release_Comparison = 0.9646155
+
 #Civets Wet Season Comparison pre/post AWD release
 overlapPlot(plot_civet_wet.b, plot_civet_wet.a, main = "Civet Wet Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
+
+#Coefficient of Overlap for Civet wet season
+(CivetWet_Release_Comparison <- overlapEst(plot_civet_wet.b, plot_civet_wet.a, type="Dhat4"))
+#CivetWet_Release_Comparison = 0.8738868
 
 #Civets Early Dry Season Comparison pre/post AWD release
 overlapPlot(plot_civet_early_dry.b, plot_civet_early_dry.a, main = "Civet Early Dry Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
+#Coefficient of Overlap for Civet early dry season
+(CivetEarlyDry_Release_Comparison <- overlapEst(plot_civet_early_dry.b, plot_civet_early_dry.a, type="Dhat4"))
+#CivetEarlyDry_Release_Comparison = 0.9180619
+
 #Civets Late Dry Season Comparison pre/post AWD release
 overlapPlot(plot_civet_late_dry.b, plot_civet_late_dry.a, main = "Civet Late Dry Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
+
+#Coefficient of Overlap for Civet late dry season
+(CivetLateDry_Release_Comparison <- overlapEst(plot_civet_late_dry.b, plot_civet_late_dry.a, type="Dhat4"))
+#CivetLateDry_Release_Comparison = 0.9042455
 
 #Genets Wet Season comparison pre/post AWD release
 overlapPlot(plot_genet_wet.b, plot_genet_wet.a, main = "Genet Wet Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
+#Coefficient of Overlap for Genet wet season
+(GenetWet_Release_Comparison <- overlapEst(plot_genet_wet.b, plot_genet_wet.a, type="Dhat4"))
+#GenetWet_Release_Comparison = 0.8979296
+
 #Genets Early Dry Season Comparison pre/post AWD release
 overlapPlot(plot_genet_early_dry.b, plot_genet_early_dry.a, main = "Genet Early Dry Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
+#Coefficient of Overlap for Genet early dry season
+(GenetEarlyDry_Release_Comparison <- overlapEst(plot_genet_early_dry.b, plot_genet_early_dry.a, type="Dhat4"))
+#GenetEarlyDry_Release_Comparison = 0.9189269
+
 #Genets Late Dry Season Comparison pre/post AWD release
 overlapPlot(plot_genet_late_dry.b, plot_genet_late_dry.a, main = "Genet Late Dry Season Activity, pre and post AWD Release")
 legend('topright', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
+
+#Coefficient of Overlap for Genet late dry season
+(GenetLateDry_Release_Comparison <- overlapEst(plot_genet_late_dry.b, plot_genet_late_dry.a, type="Dhat4"))
+#GenetLateDry_Release_Comparison = 0.9346674
