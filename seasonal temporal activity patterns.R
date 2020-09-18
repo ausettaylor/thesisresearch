@@ -194,3 +194,53 @@ plot_genet_late_dry.a <- genet_late_dry.a$Time.Radians
 #plot the temporal activity of genets in the late dry season post wild dog release
 densityPlot(plot_genet_late_dry.a, rug = TRUE, main = "Genet Activity in the Late Dry Season Post Wild Dog Release")
 
+###################################################
+
+#To do comparisons of pre wild dog release and post wild dog release
+#will use overlapPlot function to plot them on the same graph
+# AWD = African Wild Dog
+
+#Baboons Wet Season comparison pre/post AWD release
+overlapPlot(plot_baboon_wet.b, plot_baboon_wet.a, main = "Baboon Wet Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Baboons Early Dry Season comparison pre/post AWD release
+overlapPlot(plot_baboon_early_dry.b, plot_baboon_early_dry.a, main = "Baboon Early Dry Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Baboons Late Dry Season comparison pre/post AWD release
+overlapPlot(plot_baboon_late_dry.b, plot_baboon_late_dry.a, main = "Baboon Late Dry Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Civets Wet Season Comparison pre/post AWD release
+overlapPlot(plot_civet_wet.b, plot_civet_wet.a, main = "Civet Wet Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Civets Early Dry Season Comparison pre/post AWD release
+overlapPlot(plot_civet_early_dry.b, plot_civet_early_dry.a, main = "Civet Early Dry Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Civets Late Dry Season Comparison pre/post AWD release
+overlapPlot(plot_civet_late_dry.b, plot_civet_late_dry.a, main = "Civet Late Dry Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Genets Wet Season comparison pre/post AWD release
+overlapPlot(plot_genet_wet.b, plot_genet_wet.a, main = "Genet Wet Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Genets Early Dry Season Comparison pre/post AWD release
+overlapPlot(plot_genet_early_dry.b, plot_genet_early_dry.a, main = "Genet Early Dry Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
+
+#Genets Late Dry Season Comparison pre/post AWD release
+overlapPlot(plot_genet_late_dry.b, plot_genet_late_dry.a, main = "Genet Late Dry Season Activity, pre and post AWD Release")
+legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+       lty=c(1,2), col=c(1,4), bty='n')
