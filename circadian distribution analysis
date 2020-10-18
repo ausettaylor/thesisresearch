@@ -1,0 +1,51 @@
+# install necessary packages from R
+install.packages('overlap')
+install.packages('lubridate')
+install.packages('tidyverse')
+install.packages('activity')
+#call in the necessary libraries needed for this R session 
+library(overlap)
+library(lubridate)
+library(mgcv)
+library(plyr)
+library(dplyr)
+library(activity)
+
+#set working directory to the folder with the metadata csv file
+setwd("~/Desktop/thesis")
+
+#read in the data 
+data <- read.csv("thesis_data.csv")
+
+#separate into Before/After Wild Dog release
+before <- data[data$TimePeriod == "PreRelease" ,]
+before.baboon <- data[data$TimePeriod == "PreRelease" & data$Species =="Baboon" ,]
+before.civet <- data[data$TimePeriod == "PreRelease" & data$Species == "Civet" ,]
+before.genet <- data[data$TimePeriod == "PreRelease" & data$Species == "Genet" ,]
+#separated into the three species
+
+#this separates the data into prewild dog release information 
+after <- data[data$TimePeriod == "PostRelease" ,]
+after.baboon <- data[data$TimePeriod == "PostRelease" & data$Species == "Baboon" ,]
+after.civet <- data[data$TimePeriod == "PostRelease" & data$Species == "Civet" ,]
+after.genet <- data[data$TimePeriod == "PostRelease" & data$Species == "Genet" ,]
+#this separates the data into postwild dog release information
+
+#calculate "weights" to correct data to correct for the limited ability to detect animals at night
+wts.before <- 1/ifelse(before$Time.Sun>pi/2 & before$Time.Sun<pi*3/2, 1.5, 1)
+wts.after <- 1/ifelse(after$Time.Sun>pi/2 & after$Time.Sun<pi*3/2, 1.5, 1)
+
+#calculated weights by species "b" = before "a" = after
+wts.b.baboon <- 1/ifelse(before.baboon$Time.Sun>pi/2 & before.baboon$Time.Sun<pi*3/2, 1.5, 1)
+wts.b.civet <- 1/ifelse(before.civet$Time.Sun>pi/2 & before.civet$Time.Sun<pi*3/2, 1.5, 1)
+wts.b.genet <- 1/ifelse(before.genet$Time.Sun>pi/2 & before.genet$Time.Sun<pi*3/2, 1.5, 1)
+
+wts.a.baboon <- 1/ifelse(after.baboon$Time.Sun>pi/2 & after.baboon$Time.Sun<pi*3/2, 1.5, 1)
+wts.a.civet <- 1/ifelse(after.civet$Time.Sun>pi/2 & after.civet$Time.Sun<pi*3/2, 1.5, 1)
+wts.a.genet <- 1/ifelse(after.genet$Time.Sun>pi/2 & after.genet$Time.Sun<pi*3/2, 1.5, 1)
+
+#calculate the activity patterns for before/after wild dog release
+
+#Baboon
+baboon.before.fit <- fitact(before.baboon$Time.Sun, sample = "model", reps = nboots,
+                            wt = wts.b.baboon)
