@@ -47,5 +47,22 @@ wts.a.genet <- 1/ifelse(after.genet$Time.Sun>pi/2 & after.genet$Time.Sun<pi*3/2,
 #calculate the activity patterns for before/after wild dog release
 
 #Baboon
-baboon.before.fit <- fitact(before.baboon$Time.Sun, sample = "model", reps = nboots,
+baboon.before.fit <- fitact(before.baboon$Time.Sun, sample = "model", reps = 1000,
                             wt = wts.b.baboon)
+
+baboon.after.fit <- fitact(after.baboon$Time.Sun, sample = "model", reps = 1000,
+                           wt = wts.a.baboon)
+
+#Civet
+civet.before.fit <- fitact(before.civet$Time.Sun, sample = "model", reps = 1000,
+                           wt = wts.b.civet)
+
+civet.after.fit <- fitact(after.civet$Time.Sun, sample = "model", reps = 1000,
+                          wt = wts.a.civet)
+
+#Genet
+genet.before.fit <- fitact(before.genet$Time.Sun, sample = "model", reps = 1000,
+                           wt = wts.b.genet)
+
+genet.after.fit <- fitact(after.genet$Time.Sun, sample = "model", reps = 1000,
+                          wt = wts.a.genet)
