@@ -49,10 +49,14 @@ wts.a.genet <- 1/ifelse(after.genet$Time.Sun>pi/2 & after.genet$Time.Sun<pi*3/2,
 #Baboon
 baboon.before.fit <- fitact(before.baboon$Time.Sun, sample = "model", reps = 500,
                             wt = wts.b.baboon)
-{ if(!is.null(wt) & length(wt)!=length(dat)) stop("dat and wt have different lengths")}
 
 baboon.after.fit <- fitact(after.baboon$Time.Sun, sample = "model", reps = 500,
                            wt = wts.a.baboon)
+#calculate the overlap between the circadian patterns pre/post AWD release
+ovl4(baboon.before.fit, baboon.after.fit)
+#0.9736681
+#calculate if the overlap is by chance or if they're statistically different
+compareCkern(baboon.before.fit, baboon.after.fit, reps = 1000)
 
 #Civet
 civet.before.fit <- fitact(before.civet$Time.Sun, sample = "model", reps = 500,
@@ -60,6 +64,11 @@ civet.before.fit <- fitact(before.civet$Time.Sun, sample = "model", reps = 500,
 
 civet.after.fit <- fitact(after.civet$Time.Sun, sample = "model", reps = 500,
                           wt = wts.a.civet)
+ovl4(civet.before.fit, civet.after.fit)
+#0.9460931
+compareCkern(civet.before.fit, civet.after.fit, reps = 1000)
+#obs       null     seNull      pNull 
+#0.94609312 0.93748060 0.01481445 0.69500000 
 
 #Genet
 genet.before.fit <- fitact(before.genet$Time.Sun, sample = "model", reps = 500,
@@ -67,3 +76,8 @@ genet.before.fit <- fitact(before.genet$Time.Sun, sample = "model", reps = 500,
 
 genet.after.fit <- fitact(after.genet$Time.Sun, sample = "model", reps = 500,
                           wt = wts.a.genet)
+ovl4(genet.before.fit, genet.after.fit)
+#0.954521
+compareCkern(genet.before.fit, genet.after.fit, reps = 1000)
+#obs       null     seNull      pNull 
+#0.95452103 0.95404743 0.01106085 0.49900000 
