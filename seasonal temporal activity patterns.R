@@ -230,7 +230,7 @@ legend('topright', c("Pre AWD Release", "Post AWD Release"),
 
 #Civets Wet Season Comparison pre/post AWD release
 overlapPlot(plot_civet_wet.b, plot_civet_wet.a, main = "Civet Wet Season Activity, pre and post AWD Release")
-legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+legend('topleft', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
 #Coefficient of Overlap for Civet wet season
@@ -239,7 +239,7 @@ legend('topright', c("Pre AWD Release", "Post AWD Release"),
 
 #Civets Early Dry Season Comparison pre/post AWD release
 overlapPlot(plot_civet_early_dry.b, plot_civet_early_dry.a, main = "Civet Early Dry Season Activity, pre and post AWD Release")
-legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+legend('topleft', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
 #Coefficient of Overlap for Civet early dry season
@@ -248,7 +248,7 @@ legend('topright', c("Pre AWD Release", "Post AWD Release"),
 
 #Civets Late Dry Season Comparison pre/post AWD release
 overlapPlot(plot_civet_late_dry.b, plot_civet_late_dry.a, main = "Civet Late Dry Season Activity, pre and post AWD Release")
-legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+legend('topleft', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
 #Coefficient of Overlap for Civet late dry season
@@ -266,7 +266,7 @@ legend('topright', c("Pre AWD Release", "Post AWD Release"),
 
 #Genets Early Dry Season Comparison pre/post AWD release
 overlapPlot(plot_genet_early_dry.b, plot_genet_early_dry.a, main = "Genet Early Dry Season Activity, pre and post AWD Release")
-legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+legend('topleft', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
 #Coefficient of Overlap for Genet early dry season
@@ -275,7 +275,7 @@ legend('topright', c("Pre AWD Release", "Post AWD Release"),
 
 #Genets Late Dry Season Comparison pre/post AWD release
 overlapPlot(plot_genet_late_dry.b, plot_genet_late_dry.a, main = "Genet Late Dry Season Activity, pre and post AWD Release")
-legend('topright', c("Pre AWD Release", "Post AWD Release"), 
+legend('topleft', c("Pre AWD Release", "Post AWD Release"), 
        lty=c(1,2), col=c(1,4), bty='n')
 
 #Coefficient of Overlap for Genet late dry season
