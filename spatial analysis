@@ -1,0 +1,82 @@
+#single season occupancy analyses, need to separate by wet, dry, and late dry!!
+
+#install necessary packages
+install.packages('unmarked')
+
+#load necessary packages
+library(unmarked)
+
+#set working directory to the folder with the metadata csv file
+setwd("~/Desktop/thesis")
+
+#read in the data 
+#do the spatial analysis BY SPECIES starting with baboons
+#select data for only focal species
+data <- read.csv("thesis_data.csv")
+
+#create datasets for wet season analysis 
+#before wild dog introduction
+baboon_wet_before <- data[data$season_year == "Wet 2017"
+                          & data$Species == "Baboon",]
+civet_wet_before <- data[data$season_year == "Wet 2017"
+                          & data$Species == "Civet",]
+genet_wet_before <- data[data$season_year == "Wet 2017"
+                          & data$Species == "Genet",]
+#after wild dog introduction
+baboon_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Baboon",]
+civet_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Civet",]
+genet_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Genet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame. so all 6 for the wet season analysis
+min_date <- min(baboon_wet_before$DateTime)
+max_date <- max(baboon_wet_before$DateTime)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+se_baboon_wet_before <- searcheffort[searcheffort$date %in%
+                                       seq(min_date, max_date, by="days"),]
+######################################
+camtrap <- unmarkedFrameOccu(y=data, obsCovs=covs.obs)
+summary(camtrap)
+#########################################
+
+#baboon wet season after wild dog introduction
+min_date_ba <- min(baboon_wet_after$DateTime)
+max_date_ba <- max(baboon_wet_after$DateTime)
+
+se_baboon_wet_after <- searcheffort[searcheffort$date %in%
+                                      seq(min_date_ba, max_date_ba, by= "days"),]
+
+#civet wet season analysis
+#before wild dog introduction
+min_date_cb <- min(civet_wet_before$DateTime)
+max_date_cb <- max(civet_wet_before$DateTime)
+
+se_civet_wet_before <- searcheffort[searcheffort$date %in%
+                                      seq(min_date_cb, max_date_cb, by= "days"),]
+#after wild dog introduction
+min_date_ca <- min(civet_wet_after$DateTime)
+max_date_ca <- max(civet_wet_after$DateTime)
+
+se_civet_wet_after <- searcheffort[searcheffort$date %in%
+                                     seq(min_date_ca, max_date_ca, by= "days"),]
+
+#genet wet season analysis
+#before wild dog introduction
+min_date_gbw <- min(genet_wet_before$DateTime)
+max_date_gbw <- max(genet_wet_before$DateTime)
+
+se_genet_wet_before <- searcheffort[searcheffort$date %in%
+                                      seq(min_date_gbw, max_date_gbw, by= "days"),]
+
+#after wild dog introduction
+min_date_gaw <- min(genet_wet_after$DateTime)
+max_date_gaw <- max(genet_wet_after$DateTime)
+
+se_genet_wet_after <- searcheffort[searcheffort$date %in%
+                                     seq(min_date_gaw, max_date_gaw, by= "days"), ]
