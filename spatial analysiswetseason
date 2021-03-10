@@ -1,0 +1,477 @@
+#single season occupancy analyses, need to separate by wet, dry, and late dry!!
+
+#install necessary packages
+install.packages('unmarked')
+
+#load necessary packages
+library(unmarked)
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+#need this for join function??
+
+#set working directory to the folder with the metadata csv file
+setwd("~/Desktop/thesis")
+
+#read in the data 
+#do the spatial analysis BY SPECIES starting with baboons
+#select data for only focal species
+data <- read.csv("thesis_data.csv")
+
+#create datasets for wet season analysis 
+#before wild dog introduction
+baboon_wet_before <- data[data$season_year == "Wet 2017"
+                          & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_bwb <- min(baboon_wet_before$DateTime)
+max_date_bwb <- max(baboon_wet_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_wet_before$Date <- strptime(baboon_wet_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_wet_before$week <- week(baboon_wet_before$Date)
+
+names(baboon_wet_before)[1] <- "site"
+baboon_wet_before <- baboon_wet_before[c("site", "week")]
+baboon_wet_before <- baboon_wet_before[!duplicated(baboon_wet_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_wet_before$week)
+baboon_wet_before$week <- 
+  ifelse(baboon_wet_before$week <48,
+         baboon_wet_before$week + 53,
+         baboon_wet_before$week)
+#make occupancy column
+baboon_wet_before$occu <- 1
+head(baboon_wet_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bwb <- strptime(min_date_bwb, "%Y-%m-%d")
+max_date_bwb <- strptime(max_date_bwb, "%Y-%m-%d")
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bwb <- seq(min_date_bwb, max_date_bwb, by="days")
+#turn this list into characters
+seqdates.bwb <- as.character(seqdates.bwb)
+#chop off the time part of the character string
+seqdates.bwb <- substr(seqdates.bwb, 1, 10)
+
+se_baboon_wet_before <- searcheffort[searcheffort$date %in%
+                                       seqdates.bwb,]
+se_baboon_wet_before$date <- NULL
+se_baboon_wet_before$season <- NULL
+#join search effort and data
+baboon_wet_before <- join(se_baboon_wet_before, baboon_wet_before, type = "left"); head(baboon_wet_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_wet_before[is.na(baboon_wet_before)] <- 0
+head(baboon_wet_before)
+table(baboon_wet_before$occu)
+
+#there's duplicates, need to fix it
+baboon_wet_before <- baboon_wet_before[!duplicated(baboon_wet_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_wet_before <- spread(baboon_wet_before, week, occu); head(baboon_wet_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bwb <- unique(baboon_wet_before$site)
+#now data contains just detection histories
+baboon_wet_before$site <- NULL
+head(baboon_wet_before)
+###############################################################################
+
+#baboon wet season after wild dog introduction
+baboon_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Baboon",]
+
+min_date_bwa <- min(baboon_wet_after$DateTime)
+max_date_bwa <- max(baboon_wet_after$DateTime)
+
+baboon_wet_after$Date <- strptime(baboon_wet_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_wet_after$week <- week(baboon_wet_after$Date)
+
+names(baboon_wet_after)[1] <- "site"
+baboon_wet_after <- baboon_wet_after[c("site", "week")]
+baboon_wet_after <- baboon_wet_after[!duplicated(baboon_wet_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_wet_after$week)
+baboon_wet_after$week <- 
+  ifelse(baboon_wet_after$week <48,
+         baboon_wet_after$week + 53,
+         baboon_wet_after$week)
+#make occupancy column
+baboon_wet_after$occu <- 1
+head(baboon_wet_after)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bwa <- strptime(min_date_bwa, "%Y-%m-%d")
+max_date_bwa <- strptime(max_date_bwa, "%Y-%m-%d")
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bwa <- seq(min_date_bwa, max_date_bwa, by="days")
+#turn this list into characters
+seqdates.bwa <- as.character(seqdates.bwa)
+#chop off the time part of the character string
+seqdates.bwa <- substr(seqdates.bwa, 1, 10)
+
+se_baboon_wet_after <- searcheffort[searcheffort$date %in%
+                                       seqdates.bwa,]
+#join search effort and data
+baboon_wet_after <- join(se_baboon_wet_after, baboon_wet_after, type = "left"); head(baboon_wet_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_wet_after[is.na(baboon_wet_after)] <- 0
+head(baboon_wet_after)
+table(baboon_wet_after$occu)
+#make sure it makes the search effort data 
+head(se_baboon_wet_after)
+head(baboon_wet_after)
+
+#convert long dataframe into a wide format for the unmarked package
+#baboon_wet_after <- spread(baboon_wet_after, week, occu); head(baboon_wet_after)
+baboon_wet_after <- pivot_wider(baboon_wet_after, names_from = week, values_from = occu, values_fn = length) 
+head(baboon_wet_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bwa <- unique(baboon_wet_before$site)
+#now data contains just detection histories
+baboon_wet_after$site <- NULL
+head(baboon_wet_after)
+
+############################################################################
+#civet wet season analysis
+
+#before wild dog introduction
+civet_wet_before <- data[data$season_year == "Wet 2017"
+                         & data$Species == "Civet",]
+min_date_cwb <- min(civet_wet_before$DateTime)
+max_date_cwb <- max(civet_wet_before$DateTime)
+
+civet_wet_before$Date <- strptime(civet_wet_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+civet_wet_before$week <- week(civet_wet_before$Date)
+
+names(civet_wet_before)[1] <- "site"
+civet_wet_before <- civet_wet_before[c("site", "week")]
+civet_wet_before <- civet_wet_before[!duplicated(civet_wet_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(civet_wet_before$week)
+civet_wet_before$week <- 
+  ifelse(civet_wet_before$week <48,
+         civet_wet_before$week + 53,
+         civet_wet_before$week)
+#make occupancy column
+civet_wet_before$occu <- 1
+head(civet_wet_before)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_cwb <- strptime(min_date_cwb, "%Y-%m-%d")
+max_date_cwb <- strptime(max_date_cwb, "%Y-%m-%d")
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.cwb <- seq(min_date_cwb, max_date_cwb, by="days")
+#turn this list into characters
+seqdates.cwb <- as.character(seqdates.cwb)
+#chop off the time part of the character string
+seqdates.cwb <- substr(seqdates.cwb, 1, 10)
+
+se_civet_wet_before <- searcheffort[searcheffort$date %in%
+                                      seqdates.cwb,]
+#join search effort and data
+civet_wet_before <- join(se_civet_wet_before, civet_wet_before, type = "left"); head(civet_wet_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+civet_wet_before[is.na(civet_wet_before)] <- 0
+head(civet_wet_before)
+table(civet_wet_before$occu)
+#make sure it makes the search effort data 
+head(se_civet_wet_before)
+head(civet_wet_before)
+
+#convert long dataframe into a wide format for the unmarked package
+#civet_wet_before <- pivot_wider(civet_wet_before, names_from = week, values_from = occu, values_fn = length) 
+civet_wet_before <- spread(civet_wet_before, week, occu)
+head(civet_wet_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.cwb <- unique(civet_wet_before$site)
+#now data contains just detection histories
+civet_wet_before$site <- NULL
+head(civet_wet_before)
+
+####################################################################
+
+#after wild dog introduction
+
+civet_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Civet",]
+min_date_cwa <- min(civet_wet_after$DateTime)
+max_date_cwa <- max(civet_wet_after$DateTime)
+
+civet_wet_after$Date <- strptime(civet_wet_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+civet_wet_after$week <- week(civet_wet_after$Date)
+
+names(civet_wet_after)[1] <- "site"
+civet_wet_after <- civet_wet_after[c("site", "week")]
+civet_wet_after <- civet_wet_after[!duplicated(civet_wet_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(civet_wet_after$week)
+civet_wet_after$week <- 
+  ifelse(civet_wet_after$week <48,
+         civet_wet_after$week + 53,
+         civet_wet_after$week)
+#make occupancy column
+civet_wet_after$occu <- 1
+head(civet_wet_after)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_cwa <- strptime(min_date_cwa, "%Y-%m-%d")
+max_date_cwa <- strptime(max_date_cwa, "%Y-%m-%d")
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.cwa <- seq(min_date_cwa, max_date_cwa, by="days")
+#turn this list into characters
+seqdates.cwa <- as.character(seqdates.cwa)
+#chop off the time part of the character string
+seqdates.cwa <- substr(seqdates.cwa, 1, 10)
+
+se_civet_wet_after <- searcheffort[searcheffort$date %in%
+                                      seqdates.cwa,]
+#join search effort and data
+civet_wet_after <- join(se_civet_wet_after, civet_wet_after, type = "left"); head(civet_wet_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+civet_wet_after[is.na(civet_wet_after)] <- 0
+head(civet_wet_after)
+table(civet_wet_after$occu)
+#make sure it makes the search effort data 
+head(se_civet_wet_after)
+head(civet_wet_after)
+
+#convert long dataframe into a wide format for the unmarked package
+civet_wet_after <- pivot_wider(civet_wet_after, names_from = week, values_from = occu, values_fn = length) 
+head(civet_wet_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.cwa <- unique(civet_wet_after$site)
+#now data contains just detection histories
+civet_wet_after$site <- NULL
+head(civet_wet_after)
+
+###################################################################################
+#genet wet season analysis
+genet_wet_before <- data[data$season_year == "Wet 2017"
+                         & data$Species == "Genet",]
+min_date_gwb <- min(genet_wet_before$DateTime)
+max_date_gwb <- max(genet_wet_before$DateTime)
+
+genet_wet_before$Date <- strptime(genet_wet_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+genet_wet_before$week <- week(genet_wet_before$Date)
+
+names(genet_wet_before)[1] <- "site"
+genet_wet_before <- genet_wet_before[c("site", "week")]
+genet_wet_before <- genet_wet_before[!duplicated(genet_wet_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(genet_wet_before$week)
+genet_wet_before$week <- 
+  ifelse(genet_wet_before$week <48,
+         genet_wet_before$week + 53,
+         genet_wet_before$week)
+#make occupancy column
+genet_wet_before$occu <- 1
+head(genet_wet_before)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_gwb <- strptime(min_date_gwb, "%Y-%m-%d")
+max_date_gwb <- strptime(max_date_gwb, "%Y-%m-%d")
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.gwb <- seq(min_date_gwb, max_date_gwb, by="days")
+#turn this list into characters
+seqdates.gwb <- as.character(seqdates.gwb)
+#chop off the time part of the character string
+seqdates.gwb <- substr(seqdates.gwb, 1, 10)
+
+se_genet_wet_before <- searcheffort[searcheffort$date %in%
+                                      seqdates.gwb,]
+#join search effort and data
+genet_wet_before <- join(se_genet_wet_before, genet_wet_before, type = "left"); head(genet_wet_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+genet_wet_before[is.na(genet_wet_before)] <- 0
+head(genet_wet_before)
+table(genet_wet_before$occu)
+#make sure it makes the search effort data 
+head(se_genet_wet_before)
+head(genet_wet_before)
+
+#convert long dataframe into a wide format for the unmarked package
+
+genet_wet_before <- spread(genet_wet_before, week, occu)
+head(genet_wet_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.gwb <- unique(genet_wet_before$site)
+#now data contains just detection histories
+genet_wet_before$site <- NULL
+head(genet_wet_before)
+
+#############################################################################
+
+#after wild dog introduction
+genet_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Genet",]
+min_date_gwa <- min(genet_wet_after$DateTime)
+max_date_gwa <- max(genet_wet_after$DateTime)
+
+genet_wet_after$Date <- strptime(genet_wet_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+genet_wet_after$week <- week(genet_wet_after$Date)
+
+names(genet_wet_after)[1] <- "site"
+genet_wet_after <- genet_wet_after[c("site", "week")]
+genet_wet_after <- genet_wet_after[!duplicated(genet_wet_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(genet_wet_after$week)
+genet_wet_after$week <- 
+  ifelse(genet_wet_after$week <48,
+         genet_wet_after$week + 53,
+         genet_wet_after$week)
+#make occupancy column
+genet_wet_after$occu <- 1
+head(genet_wet_after)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_gwa <- strptime(min_date_gwa, "%Y-%m-%d")
+max_date_gwa <- strptime(max_date_gwa, "%Y-%m-%d")
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.gwa <- seq(min_date_gwa, max_date_gwa, by="days")
+#turn this list into characters
+seqdates.gwa <- as.character(seqdates.gwa)
+#chop off the time part of the character string
+seqdates.gwa <- substr(seqdates.gwa, 1, 10)
+
+se_genet_wet_after <- searcheffort[searcheffort$date %in%
+                                      seqdates.gwa,]
+#join search effort and data
+genet_wet_after <- join(se_genet_wet_after, genet_wet_after, type = "left"); head(genet_wet_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+genet_wet_after[is.na(genet_wet_after)] <- 0
+head(genet_wet_after)
+table(genet_wet_after$occu)
+#make sure it makes the search effort data 
+head(se_genet_wet_after)
+head(genet_wet_after)
+
+#convert long dataframe into a wide format for the unmarked package
+#genet_wet_after <- spread(genet_wet_after, week, occu)
+genet_wet_after <- pivot_wider(genet_wet_after, names_from = week, values_from = occu, values_fn = length) 
+
+head(genet_wet_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.gwa <- unique(genet_wet_after$site)
+gwa <- length(sites.gwa)
+#now data contains just detection histories
+genet_wet_after$site <- NULL
+head(genet_wet_after)
+
+###############################################################################
+#CREATING CO VARIATE DATA FRAME#
+covs.site <- read.csv("covariates.csv")
+covs.site.bwb <- covs.site[covs.site$siteid %in% 
+                         sites.bwb,]
+#pull out the covariate you want
+covs.site.bwb <- covs.site.bwb[c("siteid", "hab_type")]
+
+head(covs.site.bwb)
+names(covs.site.bwb)[1] <- "site"
+head(covs.site.bwb)
+
+#remove any potential duplicates
+covs.site.bwb <- covs.site.bwb[!duplicated(covs.site.bwb),]
+#need to remove for 'unmarked'
+covs.site.bwb$site <- NULL
+head(covs.site.bwb)
+
+
+#sampling length
+(a <- length(baboon_wet_before))
+n <- length(sites.bwb)
+time.bwb <- as.factor(rep(c(1:a),n))
+
+covs.obc.bwb <- data.frame(time.bwb)
+#create the unmarked dataframe
+camtrap.bwb <- unmarkedFrameOccu(y = baboon_wet_before, siteCovs = covs.site.bwb)
+summary(camtrap.bwb)
+
+(naive_occ_bwb <- sum(ifelse(rowSums(baboon_wet_before, na.rm =T)>0,1,0))/nrow(baboon_wet_before[1])
+
+fml.bwb <- occu(~1 ~1, camtrap.bwb)
+fml.bwb
+
+#backtransform detection probability to original scale
+backTransform(fml.bwb, 'det')
+#15.4% detection probability
+
+fml.bwb2 <- occu(~1 ~hab_type, camtrap.bwb)
+
+
+
