@@ -19,8 +19,9 @@ setwd("~/Desktop/thesis")
 #select data for only focal species
 data <- read.csv("thesis_data.csv")
 
-#create datasets for wet season analysis 
-#before wild dog introduction
+###############################################################################
+#BABOON WET SEASON BEFORE AFRICAN WILD DOG INTRODUCTION#
+
 baboon_wet_before <- data[data$season_year == "Wet 2017"
                           & data$Species == "Baboon",]
 
@@ -47,6 +48,7 @@ baboon_wet_before$week <-
          baboon_wet_before$week)
 #make occupancy column
 baboon_wet_before$occu <- 1
+
 head(baboon_wet_before)
 
 #load in search effort 
@@ -90,15 +92,20 @@ sites.bwb <- unique(baboon_wet_before$site)
 #now data contains just detection histories
 baboon_wet_before$site <- NULL
 head(baboon_wet_before)
-###############################################################################
 
-#baboon wet season after wild dog introduction
+###############################################################################
+#BABOON WET SEASON AFTER WILD DOG INTRODUCTION
+
 baboon_wet_after <- data[data$season_year == "Wet 2019"
                          & data$Species == "Baboon",]
 
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
 min_date_bwa <- min(baboon_wet_after$DateTime)
 max_date_bwa <- max(baboon_wet_after$DateTime)
 
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
 baboon_wet_after$Date <- strptime(baboon_wet_after$Date, "%Y-%m-%d")
 #step 2: organize dates into weeks
 baboon_wet_after$week <- week(baboon_wet_after$Date)
@@ -117,17 +124,18 @@ baboon_wet_after$week <-
 baboon_wet_after$occu <- 1
 head(baboon_wet_after)
 
-#need to turn min/max dataframes to have their date information as a date not character
-min_date_bwa <- strptime(min_date_bwa, "%Y-%m-%d")
-max_date_bwa <- strptime(max_date_bwa, "%Y-%m-%d")
-
 #load in search effort 
 searcheffort <- read.csv("SearchEffort.csv") 
 
 #need to turn search effort date from "character" to a date
 searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
 #now put it back into a character
 searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bwa <- strptime(min_date_bwa, "%Y-%m-%d")
+max_date_bwa <- strptime(max_date_bwa, "%Y-%m-%d")
 
 #make a vector that's a sequence of all the dates between min/max date
 seqdates.bwa <- seq(min_date_bwa, max_date_bwa, by="days")
@@ -137,21 +145,21 @@ seqdates.bwa <- as.character(seqdates.bwa)
 seqdates.bwa <- substr(seqdates.bwa, 1, 10)
 
 se_baboon_wet_after <- searcheffort[searcheffort$date %in%
-                                       seqdates.bwa,]
+                                      seqdates.bwa,]
+se_baboon_wet_after$date <- NULL
+se_baboon_wet_after$season <- NULL
 #join search effort and data
 baboon_wet_after <- join(se_baboon_wet_after, baboon_wet_after, type = "left"); head(baboon_wet_after)
 #NAs when cams on but no sightings; change NAs to 0s for analysis
 baboon_wet_after[is.na(baboon_wet_after)] <- 0
 head(baboon_wet_after)
 table(baboon_wet_after$occu)
-#make sure it makes the search effort data 
-head(se_baboon_wet_after)
-head(baboon_wet_after)
+
+#there's duplicates, need to fix it
+baboon_wet_after <- baboon_wet_after[!duplicated(baboon_wet_after),]
 
 #convert long dataframe into a wide format for the unmarked package
-#baboon_wet_after <- spread(baboon_wet_after, week, occu); head(baboon_wet_after)
-baboon_wet_after <- pivot_wider(baboon_wet_after, names_from = week, values_from = occu, values_fn = length) 
-head(baboon_wet_after)
+baboon_wet_after <- spread(baboon_wet_after, week, occu); head(baboon_wet_after)
 
 #make a list of our camera trap sites and remove column from dataframe
 sites.bwa <- unique(baboon_wet_before$site)
@@ -159,15 +167,19 @@ sites.bwa <- unique(baboon_wet_before$site)
 baboon_wet_after$site <- NULL
 head(baboon_wet_after)
 
-############################################################################
-#civet wet season analysis
+###################################################################################
+#CIVET WET SEASON BEFORE WILD DOG INTRODUCTION
 
-#before wild dog introduction
 civet_wet_before <- data[data$season_year == "Wet 2017"
                          & data$Species == "Civet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
 min_date_cwb <- min(civet_wet_before$DateTime)
 max_date_cwb <- max(civet_wet_before$DateTime)
 
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
 civet_wet_before$Date <- strptime(civet_wet_before$Date, "%Y-%m-%d")
 #step 2: organize dates into weeks
 civet_wet_before$week <- week(civet_wet_before$Date)
@@ -186,17 +198,18 @@ civet_wet_before$week <-
 civet_wet_before$occu <- 1
 head(civet_wet_before)
 
-#need to turn min/max dataframes to have their date information as a date not character
-min_date_cwb <- strptime(min_date_cwb, "%Y-%m-%d")
-max_date_cwb <- strptime(max_date_cwb, "%Y-%m-%d")
-
 #load in search effort 
 searcheffort <- read.csv("SearchEffort.csv") 
 
 #need to turn search effort date from "character" to a date
 searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
 #now put it back into a character
 searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_cwb <- strptime(min_date_cwb, "%Y-%m-%d")
+max_date_cwb <- strptime(max_date_cwb, "%Y-%m-%d")
 
 #make a vector that's a sequence of all the dates between min/max date
 seqdates.cwb <- seq(min_date_cwb, max_date_cwb, by="days")
@@ -207,18 +220,19 @@ seqdates.cwb <- substr(seqdates.cwb, 1, 10)
 
 se_civet_wet_before <- searcheffort[searcheffort$date %in%
                                       seqdates.cwb,]
+se_civet_wet_before$date <- NULL
+se_civet_wet_before$season <- NULL
 #join search effort and data
 civet_wet_before <- join(se_civet_wet_before, civet_wet_before, type = "left"); head(civet_wet_before)
 #NAs when cams on but no sightings; change NAs to 0s for analysis
 civet_wet_before[is.na(civet_wet_before)] <- 0
 head(civet_wet_before)
 table(civet_wet_before$occu)
-#make sure it makes the search effort data 
-head(se_civet_wet_before)
-head(civet_wet_before)
+
+#there's duplicates, need to fix it
+civet_wet_before <- civet_wet_before[!duplicated(civet_wet_before),]
 
 #convert long dataframe into a wide format for the unmarked package
-#civet_wet_before <- pivot_wider(civet_wet_before, names_from = week, values_from = occu, values_fn = length) 
 civet_wet_before <- spread(civet_wet_before, week, occu)
 head(civet_wet_before)
 
@@ -228,15 +242,19 @@ sites.cwb <- unique(civet_wet_before$site)
 civet_wet_before$site <- NULL
 head(civet_wet_before)
 
-####################################################################
-
-#after wild dog introduction
+############################################################################
+#CIVET WET SEASON AFTER WILD DOG INTRODUCTION
 
 civet_wet_after <- data[data$season_year == "Wet 2019"
-                         & data$Species == "Civet",]
+                        & data$Species == "Civet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
 min_date_cwa <- min(civet_wet_after$DateTime)
 max_date_cwa <- max(civet_wet_after$DateTime)
 
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
 civet_wet_after$Date <- strptime(civet_wet_after$Date, "%Y-%m-%d")
 #step 2: organize dates into weeks
 civet_wet_after$week <- week(civet_wet_after$Date)
@@ -255,17 +273,18 @@ civet_wet_after$week <-
 civet_wet_after$occu <- 1
 head(civet_wet_after)
 
-#need to turn min/max dataframes to have their date information as a date not character
-min_date_cwa <- strptime(min_date_cwa, "%Y-%m-%d")
-max_date_cwa <- strptime(max_date_cwa, "%Y-%m-%d")
-
 #load in search effort 
 searcheffort <- read.csv("SearchEffort.csv") 
 
 #need to turn search effort date from "character" to a date
 searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
 #now put it back into a character
 searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_cwa <- strptime(min_date_cwa, "%Y-%m-%d")
+max_date_cwa <- strptime(max_date_cwa, "%Y-%m-%d")
 
 #make a vector that's a sequence of all the dates between min/max date
 seqdates.cwa <- seq(min_date_cwa, max_date_cwa, by="days")
@@ -275,19 +294,22 @@ seqdates.cwa <- as.character(seqdates.cwa)
 seqdates.cwa <- substr(seqdates.cwa, 1, 10)
 
 se_civet_wet_after <- searcheffort[searcheffort$date %in%
-                                      seqdates.cwa,]
+                                     seqdates.cwa,]
+se_civet_wet_after$date <- NULL
+se_civet_wet_after$season <- NULL
+
 #join search effort and data
 civet_wet_after <- join(se_civet_wet_after, civet_wet_after, type = "left"); head(civet_wet_after)
 #NAs when cams on but no sightings; change NAs to 0s for analysis
 civet_wet_after[is.na(civet_wet_after)] <- 0
 head(civet_wet_after)
 table(civet_wet_after$occu)
-#make sure it makes the search effort data 
-head(se_civet_wet_after)
-head(civet_wet_after)
+
+#there's duplicates, need to fix it
+civet_wet_after <- civet_wet_after[!duplicated(civet_wet_after),]
 
 #convert long dataframe into a wide format for the unmarked package
-civet_wet_after <- pivot_wider(civet_wet_after, names_from = week, values_from = occu, values_fn = length) 
+civet_wet_after <- spread(civet_wet_after, week, occu)
 head(civet_wet_after)
 
 #make a list of our camera trap sites and remove column from dataframe
@@ -296,13 +318,19 @@ sites.cwa <- unique(civet_wet_after$site)
 civet_wet_after$site <- NULL
 head(civet_wet_after)
 
-###################################################################################
-#genet wet season analysis
+##################################################################################
+#GENET WET SEASON BEFORE WILD DOG INTRODUCTION
+
 genet_wet_before <- data[data$season_year == "Wet 2017"
                          & data$Species == "Genet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
 min_date_gwb <- min(genet_wet_before$DateTime)
 max_date_gwb <- max(genet_wet_before$DateTime)
 
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
 genet_wet_before$Date <- strptime(genet_wet_before$Date, "%Y-%m-%d")
 #step 2: organize dates into weeks
 genet_wet_before$week <- week(genet_wet_before$Date)
@@ -321,17 +349,18 @@ genet_wet_before$week <-
 genet_wet_before$occu <- 1
 head(genet_wet_before)
 
-#need to turn min/max dataframes to have their date information as a date not character
-min_date_gwb <- strptime(min_date_gwb, "%Y-%m-%d")
-max_date_gwb <- strptime(max_date_gwb, "%Y-%m-%d")
-
 #load in search effort 
 searcheffort <- read.csv("SearchEffort.csv") 
 
 #need to turn search effort date from "character" to a date
 searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
 #now put it back into a character
 searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_gwb <- strptime(min_date_gwb, "%Y-%m-%d")
+max_date_gwb <- strptime(max_date_gwb, "%Y-%m-%d")
 
 #make a vector that's a sequence of all the dates between min/max date
 seqdates.gwb <- seq(min_date_gwb, max_date_gwb, by="days")
@@ -342,18 +371,20 @@ seqdates.gwb <- substr(seqdates.gwb, 1, 10)
 
 se_genet_wet_before <- searcheffort[searcheffort$date %in%
                                       seqdates.gwb,]
+se_genet_wet_before$date <- NULL
+se_genet_wet_before$season <- NULL
+
 #join search effort and data
 genet_wet_before <- join(se_genet_wet_before, genet_wet_before, type = "left"); head(genet_wet_before)
 #NAs when cams on but no sightings; change NAs to 0s for analysis
 genet_wet_before[is.na(genet_wet_before)] <- 0
 head(genet_wet_before)
 table(genet_wet_before$occu)
-#make sure it makes the search effort data 
-head(se_genet_wet_before)
-head(genet_wet_before)
+
+#there's duplicates, need to fix it
+genet_wet_before <- genet_wet_before[!duplicated(genet_wet_before),]
 
 #convert long dataframe into a wide format for the unmarked package
-
 genet_wet_before <- spread(genet_wet_before, week, occu)
 head(genet_wet_before)
 
@@ -363,14 +394,19 @@ sites.gwb <- unique(genet_wet_before$site)
 genet_wet_before$site <- NULL
 head(genet_wet_before)
 
-#############################################################################
+###################################################################################
+#GENET WET SEASON AFTER WILD DOG INTRODUCTION
 
-#after wild dog introduction
 genet_wet_after <- data[data$season_year == "Wet 2019"
-                         & data$Species == "Genet",]
+                        & data$Species == "Genet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
 min_date_gwa <- min(genet_wet_after$DateTime)
 max_date_gwa <- max(genet_wet_after$DateTime)
 
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
 genet_wet_after$Date <- strptime(genet_wet_after$Date, "%Y-%m-%d")
 #step 2: organize dates into weeks
 genet_wet_after$week <- week(genet_wet_after$Date)
@@ -389,17 +425,18 @@ genet_wet_after$week <-
 genet_wet_after$occu <- 1
 head(genet_wet_after)
 
-#need to turn min/max dataframes to have their date information as a date not character
-min_date_gwa <- strptime(min_date_gwa, "%Y-%m-%d")
-max_date_gwa <- strptime(max_date_gwa, "%Y-%m-%d")
-
 #load in search effort 
 searcheffort <- read.csv("SearchEffort.csv") 
 
 #need to turn search effort date from "character" to a date
 searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
 #now put it back into a character
 searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_gwa <- strptime(min_date_gwa, "%Y-%m-%d")
+max_date_gwa <- strptime(max_date_gwa, "%Y-%m-%d")
 
 #make a vector that's a sequence of all the dates between min/max date
 seqdates.gwa <- seq(min_date_gwa, max_date_gwa, by="days")
@@ -409,32 +446,33 @@ seqdates.gwa <- as.character(seqdates.gwa)
 seqdates.gwa <- substr(seqdates.gwa, 1, 10)
 
 se_genet_wet_after <- searcheffort[searcheffort$date %in%
-                                      seqdates.gwa,]
+                                     seqdates.gwa,]
+se_genet_wet_after$date <- NULL
+se_genet_wet_after$season <- NULL
+
 #join search effort and data
 genet_wet_after <- join(se_genet_wet_after, genet_wet_after, type = "left"); head(genet_wet_after)
 #NAs when cams on but no sightings; change NAs to 0s for analysis
 genet_wet_after[is.na(genet_wet_after)] <- 0
 head(genet_wet_after)
 table(genet_wet_after$occu)
-#make sure it makes the search effort data 
-head(se_genet_wet_after)
-head(genet_wet_after)
+
+#there's duplicates, need to fix it
+genet_wet_after <- genet_wet_after[!duplicated(genet_wet_after),]
 
 #convert long dataframe into a wide format for the unmarked package
-#genet_wet_after <- spread(genet_wet_after, week, occu)
-genet_wet_after <- pivot_wider(genet_wet_after, names_from = week, values_from = occu, values_fn = length) 
-
+genet_wet_after <- spread(genet_wet_after, week, occu)
 head(genet_wet_after)
 
 #make a list of our camera trap sites and remove column from dataframe
 sites.gwa <- unique(genet_wet_after$site)
-gwa <- length(sites.gwa)
 #now data contains just detection histories
 genet_wet_after$site <- NULL
 head(genet_wet_after)
 
 ###############################################################################
-#CREATING CO VARIATE DATA FRAME#
+#CREATING CO VARIATE DATA FRAME BABOON WET BEFORE#
+
 covs.site <- read.csv("covariates.csv")
 covs.site.bwb <- covs.site[covs.site$siteid %in% 
                          sites.bwb,]
