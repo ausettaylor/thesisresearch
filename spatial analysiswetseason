@@ -162,7 +162,7 @@ baboon_wet_after <- baboon_wet_after[!duplicated(baboon_wet_after),]
 baboon_wet_after <- spread(baboon_wet_after, week, occu); head(baboon_wet_after)
 
 #make a list of our camera trap sites and remove column from dataframe
-sites.bwa <- unique(baboon_wet_before$site)
+sites.bwa <- unique(baboon_wet_after$site)
 #now data contains just detection histories
 baboon_wet_after$site <- NULL
 head(baboon_wet_after)
@@ -472,10 +472,62 @@ head(genet_wet_after)
 
 ###############################################################################
 #CREATING CO VARIATE DATA FRAME BABOON WET BEFORE#
+#when I tried to introduce two covariates and failed
+
+#covs.site <- read.csv("covariates.csv")
+#covs.site$siteid_cam <- NULL
+#covs.site.bwb <- covs.site[covs.site$siteid %in% 
+#                         sites.bwb,]
+
+#covs.site.bwb <- covs.site.bwb[!duplicated(covs.site.bwb),]
+#pull out the covariate you want
+#covs.site.bwb <- covs.site.bwb[c("siteid", "hab_type", "ground_cover")]
+
+#head(covs.site.bwb)
+#names(covs.site.bwb)[1] <- "site"
+#head(covs.site.bwb)
+
+#remove any potential duplicates
+#covs.site.bwb <- covs.site.bwb[!duplicated(covs.site.bwb),]
+#need to remove for 'unmarked'
+#covs.site.bwb$site <- NULL
+#head(covs.site.bwb)
+
+
+#sampling length
+#(a <- length(baboon_wet_before))
+#n <- length(sites.bwb)
+#time.bwb <- as.factor(rep(c(1:a),n))
+
+#covs.obc.bwb <- data.frame(time.bwb)
+#create the unmarked dataframe
+#camtrap.bwb <- unmarkedFrameOccu(y = baboon_wet_before, siteCovs = covs.site.bwb)
+#summary(camtrap.bwb)
+
+#(naive_occ_bwb <- sum(ifelse(rowSums(baboon_wet_before, na.rm = T)>0,1,0)))/nrow(baboon_wet_before[1])
+#0.9649123 --> 96.5% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+#fml.bwb <- occu(~1 ~1, camtrap.bwb)
+#fml.bwb
+
+#backtransform detection probability to original scale
+#backTransform(fml.bwb, 'det')
+#29.3% detection probability
+
+#constant detection, occupancy predicted by habitat type
+#fml.bwb2 <- occu(~1 ~hab_type, camtrap.bwb)
+#fml.bwb2
+
+#constant detection, occupancy predicted by ground cover
+#fml.bwb3 <- occu(~1 ~ground_cover, camtrap.bwb)
+
+#################################################################################
+#BABOON WET BEFORE WILD DOG INTRODUCTION
 
 covs.site <- read.csv("covariates.csv")
 covs.site.bwb <- covs.site[covs.site$siteid %in% 
-                         sites.bwb,]
+                             sites.bwb,]
 #pull out the covariate you want
 covs.site.bwb <- covs.site.bwb[c("siteid", "hab_type")]
 
@@ -500,16 +552,278 @@ covs.obc.bwb <- data.frame(time.bwb)
 camtrap.bwb <- unmarkedFrameOccu(y = baboon_wet_before, siteCovs = covs.site.bwb)
 summary(camtrap.bwb)
 
-(naive_occ_bwb <- sum(ifelse(rowSums(baboon_wet_before, na.rm =T)>0,1,0))/nrow(baboon_wet_before[1])
-
+(naive_occ_bwb <- sum(ifelse(rowSums(baboon_wet_before, na.rm = T)>0,1,0)))/nrow(baboon_wet_before[1])
+#0.9649123 --> 96.5% of sites had baboons present in the wet season before wild dog introduction  
+ 
 fml.bwb <- occu(~1 ~1, camtrap.bwb)
 fml.bwb
+ #25.1% occupancy, -0.88 detection rate
 
 #backtransform detection probability to original scale
 backTransform(fml.bwb, 'det')
-#15.4% detection probability
-
+#29.3% detection probability
+  
 fml.bwb2 <- occu(~1 ~hab_type, camtrap.bwb)
+fml.bwb2
+
+fmlist.bwb <- fitList(
+  "p(.)psi(.)" = fml.bwb,
+  "p(.)psi(habitat)" = fml.bwb2)
+
+#rank models using AIC
+modSel(fmlist.bwb)
+
+################################################################################
+#BABOON WET AFTER WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.bwa <- covs.site[covs.site$siteid %in% 
+                             sites.bwa,]
+#pull out the covariate you want
+covs.site.bwa <- covs.site.bwa[c("siteid", "hab_type")]
+
+head(covs.site.bwa)
+names(covs.site.bwa)[1] <- "site"
+head(covs.site.bwa)
+
+#remove any potential duplicates
+covs.site.bwa <- covs.site.bwa[!duplicated(covs.site.bwa),]
+#need to remove for 'unmarked'
+covs.site.bwa$site <- NULL
+head(covs.site.bwa)
 
 
+#sampling length
+(b <- length(baboon_wet_after))
+o <- length(sites.bwa)
+time.bwa <- as.factor(rep(c(1:b),o))
 
+covs.obc.bwa <- data.frame(time.bwa)
+#create the unmarked dataframe
+camtrap.bwa <- unmarkedFrameOccu(y = baboon_wet_after, siteCovs = covs.site.bwa)
+summary(camtrap.bwa)
+
+(naive_occ_bwa <- sum(ifelse(rowSums(baboon_wet_after, na.rm = T)>0,1,0)))/nrow(baboon_wet_after[1])
+#0.9459459 --> 94.6% of sites had baboons present in the wet season after wild dog introduction  
+
+fml.bwa <- occu(~1 ~1, camtrap.bwa)
+fml.bwa
+#15.8% occupancy, -1.06 Detection
+
+#backtransform detection probability to original scale
+backTransform(fml.bwa, 'det')
+#25.7% detection probability
+
+fml.bwa2 <- occu(~1 ~hab_type, camtrap.bwa)
+fml.bwa2
+
+fmlist.bwa <- fitList(
+  "p(.)psi(.)" = fml.bwa,
+  "p(.)psi(habitat)" = fml.bwa2)
+
+#rank models using AIC
+modSel(fmlist.bwa)
+
+##########################################################################
+#CIVET WET BEFORE WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.cwb <- covs.site[covs.site$siteid %in% 
+                             sites.cwb,]
+#pull out the covariate you want
+covs.site.cwb <- covs.site.cwb[c("siteid", "hab_type")]
+
+head(covs.site.cwb)
+names(covs.site.cwb)[1] <- "site"
+head(covs.site.cwb)
+
+#remove any potential duplicates
+covs.site.cwb <- covs.site.cwb[!duplicated(covs.site.cwb),]
+#need to remove for 'unmarked'
+covs.site.cwb$site <- NULL
+head(covs.site.cwb)
+
+
+#sampling length
+(c <- length(civet_wet_before))
+p <- length(sites.cwb)
+time.cwb <- as.factor(rep(c(1:c),p))
+
+covs.obc.cwb <- data.frame(time.cwb)
+#create the unmarked dataframe
+camtrap.cwb <- unmarkedFrameOccu(y = civet_wet_before, siteCovs = covs.site.cwb)
+summary(camtrap.cwb)
+
+(naive_occ_cwb <- sum(ifelse(rowSums(civet_wet_before, na.rm = T)>0,1,0)))/nrow(civet_wet_before[1])
+#0.5263158 --> 52.6% of sites had civets present in the wet season before wild dog introduction  
+
+fml.cwb <- occu(~1 ~1, camtrap.cwb)
+fml.cwb
+#84% occupancy, -1.96 detection 
+
+#backtransform detection probability to original scale
+backTransform(fml.cwb, 'det')
+#12.4% detection probability
+
+fml.cwb2 <- occu(~1 ~hab_type, camtrap.cwb)
+fml.cwb2
+
+fmlist.cwb <- fitList(
+  "p(.)psi(.)" = fml.cwb,
+  "p(.)psi(habitat)" = fml.cwb2)
+
+#rank models using AIC
+modSel(fmlist.cwb)
+
+########################################################################
+#CIVET WET AFTER WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.cwa <- covs.site[covs.site$siteid %in% 
+                             sites.cwa,]
+#pull out the covariate you want
+covs.site.cwa <- covs.site.cwa[c("siteid", "hab_type")]
+
+head(covs.site.cwa)
+names(covs.site.cwa)[1] <- "site"
+head(covs.site.cwa)
+
+#remove any potential duplicates
+covs.site.cwa <- covs.site.cwa[!duplicated(covs.site.cwa),]
+#need to remove for 'unmarked'
+covs.site.cwa$site <- NULL
+head(covs.site.cwa)
+
+
+#sampling length
+(d <- length(civet_wet_after))
+q <- length(sites.cwa)
+time.cwa <- as.factor(rep(c(1:d),q))
+
+covs.obc.cwa <- data.frame(time.cwa)
+#create the unmarked dataframe
+camtrap.cwa <- unmarkedFrameOccu(y = civet_wet_after, siteCovs = covs.site.cwa)
+summary(camtrap.cwa)
+
+(naive_occ_cwa <- sum(ifelse(rowSums(civet_wet_after, na.rm = T)>0,1,0)))/nrow(civet_wet_after[1])
+#0.4324324 --> 43.2% of sites had civets present in the wet season after wild dog introduction  
+
+fml.cwa <- occu(~1 ~1, camtrap.cwa)
+fml.cwa
+#7.6% occupancy, -2.09 detection
+
+#backtransform detection probability to original scale
+backTransform(fml.cwa, 'det')
+#11% detection probability
+
+fml.cwa2 <- occu(~1 ~hab_type, camtrap.cwa)
+fml.cwa2
+
+fmlist.cwa <- fitList(
+  "p(.)psi(.)" = fml.cwa,
+  "p(.)psi(habitat)" = fml.cwa2)
+
+#rank models using AIC
+modSel(fmlist.cwa)
+
+########################################################################
+#GENET WET BEFORE WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.gwb <- covs.site[covs.site$siteid %in% 
+                             sites.gwb,]
+#pull out the covariate you want
+covs.site.gwb <- covs.site.gwb[c("siteid", "hab_type")]
+
+head(covs.site.gwb)
+names(covs.site.gwb)[1] <- "site"
+head(covs.site.gwb)
+
+#remove any potential duplicates
+covs.site.gwb <- covs.site.gwb[!duplicated(covs.site.gwb),]
+#need to remove for 'unmarked'
+covs.site.gwb$site <- NULL
+head(covs.site.gwb)
+
+
+#sampling length
+(e <- length(genet_wet_before))
+r <- length(sites.gwb)
+time.gwb <- as.factor(rep(c(1:e),r))
+
+covs.obc.gwb <- data.frame(time.gwb)
+#create the unmarked dataframe
+camtrap.gwb <- unmarkedFrameOccu(y = genet_wet_before, siteCovs = covs.site.gwb)
+summary(camtrap.gwb)
+
+(naive_occ_gwb <- sum(ifelse(rowSums(genet_wet_before, na.rm = T)>0,1,0)))/nrow(genet_wet_before[1])
+#0.5614035 --> 56.1% of sites had genets present in the wet season before wild dog introduction  
+
+fml.gwb <- occu(~1 ~1, camtrap.gwb)
+fml.gwb
+#51.5% occupancy, -1.32 detection
+
+#backtransform detection probability to original scale
+backTransform(fml.gwb, 'det')
+#21% detection probability
+
+fml.gwb2 <- occu(~1 ~hab_type, camtrap.gwb)
+fml.gwb2
+
+fmlist.gwb <- fitList(
+  "p(.)psi(.)" = fml.gwb,
+  "p(.)psi(habitat)" = fml.gwb2)
+
+#rank models using AIC
+modSel(fmlist.gwb)
+
+####################################################################################
+#GENET WET SEASON AFTER WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.gwa <- covs.site[covs.site$siteid %in% 
+                             sites.gwa,]
+#pull out the covariate you want
+covs.site.gwa <- covs.site.gwa[c("siteid", "hab_type")]
+
+head(covs.site.gwa)
+names(covs.site.gwa)[1] <- "site"
+head(covs.site.gwa)
+
+#remove any potential duplicates
+covs.site.gwa <- covs.site.gwa[!duplicated(covs.site.gwa),]
+#need to remove for 'unmarked'
+covs.site.gwa$site <- NULL
+head(covs.site.gwa)
+
+
+#sampling length
+(f <- length(genet_wet_after))
+s <- length(sites.gwa)
+time.gwa <- as.factor(rep(c(1:f),s))
+
+covs.obc.gwa <- data.frame(time.gwa)
+#create the unmarked dataframe
+camtrap.gwa <- unmarkedFrameOccu(y = genet_wet_after, siteCovs = covs.site.gwa)
+summary(camtrap.gwa)
+
+(naive_occ_gwa <- sum(ifelse(rowSums(genet_wet_after, na.rm = T)>0,1,0)))/nrow(genet_wet_after[1])
+#0.3513514 --> 35.1% of sites had genets present in the wet season after wild dog introduction  
+
+fml.gwa <- occu(~1 ~1, camtrap.gwa)
+fml.gwa
+#-0.153 occupancy, -2.38 detection
+
+#backtransform detection probability to original scale
+backTransform(fml.gwa, 'det')
+#8.5% detection probability
+
+fml.gwa2 <- occu(~1 ~hab_type, camtrap.gwa)
+fml.gwa2
+
+fmlist.gwa <- fitList(
+  "p(.)psi(.)" = fml.gwa,
+  "p(.)psi(habitat)" = fml.gwa2)
+
+#rank models using AIC
+modSel(fmlist.gwa)
