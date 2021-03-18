@@ -1,0 +1,885 @@
+#create datasets for early dry season analysis 
+#before wild dog introduction
+baboon_edry_before <- data[data$season_year == "Early Dry 2017"
+                           & data$Species == "Baboon",]
+civet_edry_before <- data[data$season_year == "Early Dry 2017"
+                          & data$Species == "Civet",]
+genet_edry_before <- data[data$season_year == "Early Dry 2017"
+                          & data$Species == "Genet",]
+#after wild dog introduction
+baboon_edry_after <- data[data$season_year == "Early Dry 2019"
+                          & data$Species == "Baboon",]
+civet_edry_after <- data[data$season_year == "Early Dry 2019"
+                         & data$Species == "Civet",]
+genet_edry_after <- data[data$season_year == "Early Dry 2019"
+                         & data$Species == "Genet",]
+
+#single season occupancy analyses, need to separate by wet, dry, and late dry!!
+
+#install necessary packages
+install.packages('unmarked')
+
+#load necessary packages
+library(unmarked)
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+#need this for join function??
+
+#set working directory to the folder with the metadata csv file
+setwd("~/Desktop/thesis")
+
+#read in the data 
+#do the spatial analysis BY SPECIES starting with baboons
+#select data for only focal species
+data <- read.csv("thesis_data.csv")
+
+###############################################################################
+#BABOON EDRY SEASON BEFORE AFRICAN WILD DOG INTRODUCTION#
+
+baboon_edry_before <- data[data$season_year == "Early Dry 2017"
+                           & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_beb <- min(baboon_edry_before$DateTime)
+max_date_beb <- max(baboon_edry_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_edry_before$Date <- strptime(baboon_edry_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_edry_before$week <- week(baboon_edry_before$Date)
+
+names(baboon_edry_before)[1] <- "site"
+baboon_edry_before <- baboon_edry_before[c("site", "week")]
+baboon_edry_before <- baboon_edry_before[!duplicated(baboon_edry_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_edry_before$week)
+
+#make occupancy column
+baboon_edry_before$occu <- 1
+
+head(baboon_edry_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_beb <- strptime(min_date_beb, "%Y-%m-%d")
+max_date_beb <- strptime(max_date_beb, "%Y-%m-%d")
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.beb <- seq(min_date_beb, max_date_beb, by="days")
+#turn this list into characters
+seqdates.beb <- as.character(seqdates.beb)
+#chop off the time part of the character string
+seqdates.beb <- substr(seqdates.beb, 1, 10)
+
+se_baboon_edry_before <- searcheffort[searcheffort$date %in%
+                                       seqdates.beb,]
+se_baboon_edry_before$date <- NULL
+se_baboon_edry_before$season <- NULL
+#join search effort and data
+baboon_edry_before <- join(se_baboon_edry_before, baboon_edry_before, type = "left"); head(baboon_edry_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_edry_before[is.na(baboon_edry_before)] <- 0
+head(baboon_edry_before)
+table(baboon_edry_before$occu)
+
+#there's duplicates, need to fix it
+baboon_edry_before <- baboon_edry_before[!duplicated(baboon_edry_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_edry_before <- spread(baboon_edry_before, week, occu); head(baboon_edry_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.beb <- unique(baboon_edry_before$site)
+#now data contains just detection histories
+baboon_edry_before$site <- NULL
+head(baboon_edry_before)
+
+###############################################################################
+#BABOON EDRY SEASON AFTER WILD DOG INTRODUCTION
+
+baboon_edry_after <- data[data$season_year == "Early Dry 2019"
+                          & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_bea <- min(baboon_edry_after$DateTime)
+max_date_bea <- max(baboon_edry_after$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_edry_after$Date <- strptime(baboon_edry_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_edry_after$week <- week(baboon_edry_after$Date)
+
+names(baboon_edry_after)[1] <- "site"
+baboon_edry_after <- baboon_edry_after[c("site", "week")]
+baboon_edry_after <- baboon_edry_after[!duplicated(baboon_edry_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_edry_after$week)
+
+#make occupancy column
+baboon_edry_after$occu <- 1
+head(baboon_edry_after)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bea <- strptime(min_date_bea, "%Y-%m-%d")
+max_date_bea <- strptime(max_date_bea, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bea <- seq(min_date_bea, max_date_bea, by="days")
+#turn this list into characters
+seqdates.bea <- as.character(seqdates.bea)
+#chop off the time part of the character string
+seqdates.bea <- substr(seqdates.bea, 1, 10)
+
+se_baboon_edry_after <- searcheffort[searcheffort$date %in%
+                                      seqdates.bea,]
+se_baboon_edry_after$date <- NULL
+se_baboon_edry_after$season <- NULL
+#join search effort and data
+baboon_edry_after <- join(se_baboon_edry_after, baboon_edry_after, type = "left"); head(baboon_edry_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_edry_after[is.na(baboon_edry_after)] <- 0
+head(baboon_edry_after)
+table(baboon_edry_after$occu)
+
+#there's duplicates, need to fix it
+baboon_edry_after <- baboon_edry_after[!duplicated(baboon_edry_after),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_edry_after <- spread(baboon_edry_after, week, occu); head(baboon_edry_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bea <- unique(baboon_edry_after$site)
+#now data contains just detection histories
+baboon_edry_after$site <- NULL
+head(baboon_edry_after)
+
+###################################################################################
+#CIVET EDRY SEASON BEFORE WILD DOG INTRODUCTION
+
+civet_edry_before <- data[data$season_year == "Early Dry 2017"
+                          & data$Species == "Civet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_ceb <- min(civet_edry_before$DateTime)
+max_date_ceb <- max(civet_edry_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+civet_edry_before$Date <- strptime(civet_edry_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+civet_edry_before$week <- week(civet_edry_before$Date)
+
+names(civet_edry_before)[1] <- "site"
+civet_edry_before <- civet_edry_before[c("site", "week")]
+civet_edry_before <- civet_edry_before[!duplicated(civet_edry_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(civet_edry_before$week)
+
+#make occupancy column
+civet_edry_before$occu <- 1
+head(civet_edry_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_ceb <- strptime(min_date_ceb, "%Y-%m-%d")
+max_date_ceb <- strptime(max_date_ceb, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.ceb <- seq(min_date_ceb, max_date_ceb, by="days")
+#turn this list into characters
+seqdates.ceb <- as.character(seqdates.ceb)
+#chop off the time part of the character string
+seqdates.ceb <- substr(seqdates.ceb, 1, 10)
+
+se_civet_edry_before <- searcheffort[searcheffort$date %in%
+                                      seqdates.ceb,]
+se_civet_edry_before$date <- NULL
+se_civet_edry_before$season <- NULL
+#join search effort and data
+civet_edry_before <- join(se_civet_edry_before, civet_edry_before, type = "left"); head(civet_edry_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+civet_edry_before[is.na(civet_edry_before)] <- 0
+head(civet_edry_before)
+table(civet_edry_before$occu)
+
+#there's duplicates, need to fix it
+civet_edry_before <- civet_edry_before[!duplicated(civet_edry_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+civet_edry_before <- spread(civet_edry_before, week, occu)
+head(civet_edry_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.ceb <- unique(civet_edry_before$site)
+#now data contains just detection histories
+civet_edry_before$site <- NULL
+head(civet_edry_before)
+
+############################################################################
+#CIVET EDRY SEASON AFTER WILD DOG INTRODUCTION
+
+civet_edry_after <- data[data$season_year == "Early Dry 2019"
+                         & data$Species == "Civet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_cea <- min(civet_edry_after$DateTime)
+max_date_cea <- max(civet_edry_after$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+civet_edry_after$Date <- strptime(civet_edry_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+civet_edry_after$week <- week(civet_edry_after$Date)
+
+names(civet_edry_after)[1] <- "site"
+civet_edry_after <- civet_edry_after[c("site", "week")]
+civet_edry_after <- civet_edry_after[!duplicated(civet_edry_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(civet_edry_after$week)
+
+#make occupancy column
+civet_edry_after$occu <- 1
+head(civet_edry_after)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_cea <- strptime(min_date_cea, "%Y-%m-%d")
+max_date_cea <- strptime(max_date_cea, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.cea <- seq(min_date_cea, max_date_cea, by="days")
+#turn this list into characters
+seqdates.cea <- as.character(seqdates.cea)
+#chop off the time part of the character string
+seqdates.cea <- substr(seqdates.cea, 1, 10)
+
+se_civet_edry_after <- searcheffort[searcheffort$date %in%
+                                     seqdates.cea,]
+se_civet_edry_after$date <- NULL
+se_civet_edry_after$season <- NULL
+
+#join search effort and data
+civet_edry_after <- join(se_civet_edry_after, civet_edry_after, type = "left"); head(civet_edry_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+civet_edry_after[is.na(civet_edry_after)] <- 0
+head(civet_edry_after)
+table(civet_edry_after$occu)
+
+#there's duplicates, need to fix it
+civet_edry_after <- civet_edry_after[!duplicated(civet_edry_after),]
+
+#convert long dataframe into a wide format for the unmarked package
+civet_edry_after <- spread(civet_edry_after, week, occu)
+head(civet_edry_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.cea <- unique(civet_edry_after$site)
+#now data contains just detection histories
+civet_edry_after$site <- NULL
+head(civet_edry_after)
+
+##################################################################################
+#GENET WET SEASON BEFORE WILD DOG INTRODUCTION
+
+genet_edry_before <- data[data$season_year == "Early Dry 2017"
+                          & data$Species == "Genet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_geb <- min(genet_edry_before$DateTime)
+max_date_geb <- max(genet_edry_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+genet_edry_before$Date <- strptime(genet_edry_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+genet_edry_before$week <- week(genet_edry_before$Date)
+
+names(genet_edry_before)[1] <- "site"
+genet_edry_before <- genet_edry_before[c("site", "week")]
+genet_edry_before <- genet_edry_before[!duplicated(genet_edry_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(genet_edry_before$week)
+
+#make occupancy column
+genet_edry_before$occu <- 1
+head(genet_edry_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_geb <- strptime(min_date_geb, "%Y-%m-%d")
+max_date_geb <- strptime(max_date_geb, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.geb <- seq(min_date_geb, max_date_geb, by="days")
+#turn this list into characters
+seqdates.geb <- as.character(seqdates.geb)
+#chop off the time part of the character string
+seqdates.geb <- substr(seqdates.geb, 1, 10)
+
+se_genet_edry_before <- searcheffort[searcheffort$date %in%
+                                      seqdates.geb,]
+se_genet_edry_before$date <- NULL
+se_genet_edry_before$season <- NULL
+
+#join search effort and data
+genet_edry_before <- join(se_genet_edry_before, genet_edry_before, type = "left"); head(genet_edry_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+genet_edry_before[is.na(genet_edry_before)] <- 0
+head(genet_edry_before)
+table(genet_edry_before$occu)
+
+#there's duplicates, need to fix it
+genet_edry_before <- genet_edry_before[!duplicated(genet_edry_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+genet_edry_before <- spread(genet_edry_before, week, occu)
+head(genet_edry_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.geb <- unique(genet_edry_before$site)
+#now data contains just detection histories
+genet_edry_before$site <- NULL
+head(genet_edry_before)
+
+###################################################################################
+#GENET WET SEASON AFTER WILD DOG INTRODUCTION
+
+genet_edry_after <- data[data$season_year == "Early Dry 2019"
+                         & data$Species == "Genet",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_gea <- min(genet_edry_after$DateTime)
+max_date_gea <- max(genet_edry_after$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+genet_edry_after$Date <- strptime(genet_edry_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+genet_edry_after$week <- week(genet_edry_after$Date)
+
+names(genet_edry_after)[1] <- "site"
+genet_edry_after <- genet_edry_after[c("site", "week")]
+genet_edry_after <- genet_edry_after[!duplicated(genet_edry_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(genet_edry_after$week)
+
+#make occupancy column
+genet_edry_after$occu <- 1
+head(genet_edry_after)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_gea <- strptime(min_date_gea, "%Y-%m-%d")
+max_date_gea <- strptime(max_date_gea, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.gea <- seq(min_date_gea, max_date_gea, by="days")
+#turn this list into characters
+seqdates.gea <- as.character(seqdates.gea)
+#chop off the time part of the character string
+seqdates.gea <- substr(seqdates.gea, 1, 10)
+
+se_genet_edry_after <- searcheffort[searcheffort$date %in%
+                                     seqdates.gea,]
+se_genet_edry_after$date <- NULL
+se_genet_edry_after$season <- NULL
+
+#join search effort and data
+genet_edry_after <- join(se_genet_edry_after, genet_edry_after, type = "left"); head(genet_edry_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+genet_edry_after[is.na(genet_edry_after)] <- 0
+head(genet_edry_after)
+table(genet_edry_after$occu)
+
+#there's duplicates, need to fix it
+genet_edry_after <- genet_edry_after[!duplicated(genet_edry_after),]
+
+#convert long dataframe into a wide format for the unmarked package
+genet_edry_after <- spread(genet_edry_after, week, occu)
+head(genet_edry_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.gea <- unique(genet_edry_after$site)
+#now data contains just detection histories
+genet_edry_after$site <- NULL
+head(genet_edry_after)
+
+###############################################################################
+#CREATING CO VARIATE DATA FRAME BABOON WET BEFORE#
+
+covs.site <- read.csv("covariates.csv")
+covs.site.beb <- covs.site[c("siteid", "hab_type", "ground_cover")]
+covs.site.beb <- covs.site.beb[covs.site.beb$siteid %in% 
+                                 sites.beb,]
+
+covs.site.beb <- covs.site.beb[!duplicated(covs.site.beb),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.beb$tag <- paste(covs.site.beb$siteid, covs.site.beb$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.beb <- covs.site.beb[!duplicated(covs.site.beb$tag),]
+#remove tag identifier
+covs.site.beb$tag <- NULL
+
+head(covs.site.beb)
+names(covs.site.beb)[1] <- "site"
+head(covs.site.beb)
+
+#remove any potential duplicates
+covs.site.beb <- covs.site.beb[!duplicated(covs.site.beb),]
+#need to remove for 'unmarked'
+covs.site.beb$site <- NULL
+head(covs.site.beb)
+
+
+#sampling length
+(a <- length(baboon_edry_before))
+n <- length(sites.beb)
+time.beb <- as.factor(rep(c(1:a),n))
+
+covs.obc.beb <- data.frame(time.beb)
+
+#create the unmarked dataframe
+camtrap.beb <- unmarkedFrameOccu(y = baboon_edry_before, siteCovs = covs.site.beb, obsCovs = covs.obc.beb)
+summary(camtrap.beb)
+
+(naive_occ_beb <- sum(ifelse(rowSums(baboon_edry_before, na.rm = T)>0,1,0)))/nrow(baboon_edry_before[1])
+#0.9649123 --> 96.5% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+fml.beb <- occu(~1 ~1, camtrap.beb)
+fml.beb
+
+#backtransform detection probability to original scale
+backTransform(fml.beb, 'det')
+#29.3% detection probability
+
+#constant detection, occupancy predicted by habitat type
+fml.beb2 <- occu(~1 ~hab_type, camtrap.beb)
+fml.beb2
+
+#backtransform detection probability to original scale
+backTransform(fml.beb2, 'det')
+
+#constant detection, occupancy predicted by ground cover
+fml.beb3 <- occu(~1 ~ground_cover, camtrap.beb)
+fml.beb3
+
+#backtransform detection probability to original scale
+backTransform(fml.beb3, 'det')
+
+#detection impacted by time, constant occupancy
+fml.beb4 <- occu(~time.beb ~1, camtrap.beb)
+fml.beb4
+
+backTransform(fml.beb4, 'det')
+
+################################################################################
+#BABOON WET AFTER WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.bea <- covs.site[c("siteid", "hab_type", "ground_cover")]
+covs.site.bea <- covs.site.bea[covs.site$siteid %in% 
+                                 sites.bea,]
+
+covs.site.bea <- covs.site.bea[!duplicated(covs.site.bea),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.bea$tag <- paste(covs.site.bea$siteid, covs.site.bea$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.bea <- covs.site.bea[!duplicated(covs.site.bea$tag),]
+#remove tag identifier
+covs.site.bea$tag <- NULL
+
+head(covs.site.bea)
+names(covs.site.bea)[1] <- "site"
+head(covs.site.bea)
+
+#remove any potential duplicates
+covs.site.bea <- covs.site.bea[!duplicated(covs.site.bea),]
+#need to remove for 'unmarked'
+covs.site.bea$site <- NULL
+head(covs.site.bea)
+
+
+#sampling length
+(b <- length(baboon_edry_after))
+o <- length(sites.bea)
+time.bea <- as.factor(rep(c(1:b),o))
+
+
+covs.obc.bea <- data.frame(time.bea)
+
+#create the unmarked dataframe
+camtrap.bea <- unmarkedFrameOccu(y = baboon_edry_after, siteCovs = covs.site.bea, obsCovs = covs.obc.bea)
+summary(camtrap.bea)
+
+(naive_occ_bea <- sum(ifelse(rowSums(baboon_edry_after, na.rm = T)>0,1,0)))/nrow(baboon_edry_after[1])
+#0.9459459--> 94.6% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+fml.bea <- occu(~1 ~1, camtrap.bea)
+fml.bea
+
+#backtransform detection probability to original scale
+backTransform(fml.bea, 'det')
+#29.3% detection probability
+
+#constant detection, occupancy predicted by habitat type
+fml.bea2 <- occu(~1 ~hab_type, camtrap.bea)
+fml.bea2
+
+#backtransform to og scale
+backTransform(fml.bea2, 'det')
+
+#constant detection, occupancy predicted by ground cover
+fml.bea3 <- occu(~1 ~ground_cover, camtrap.bea)
+fml.bea3
+
+#backtransform to og scale
+backTransform(fml.bea3, 'det')
+
+#detection impacted by time, constant occupancy
+fml.bea4 <- occu(~time.bea ~1, camtrap.bea)
+fml.bea4
+
+backTransform(fml.bea4, 'det')
+
+##########################################################################
+#CIVET EDRY BEFORE WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.ceb <- covs.site[c("siteid", "hab_type", "ground_cover")]
+covs.site.ceb <- covs.site.ceb[covs.site$siteid %in% 
+                                 sites.ceb,]
+
+covs.site.ceb <- covs.site.ceb[!duplicated(covs.site.ceb),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.ceb$tag <- paste(covs.site.ceb$siteid, covs.site.ceb$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.ceb <- covs.site.ceb[!duplicated(covs.site.ceb$tag),]
+#remove tag identifier
+covs.site.ceb$tag <- NULL
+
+head(covs.site.ceb)
+names(covs.site.ceb)[1] <- "site"
+head(covs.site.ceb)
+
+#remove any potential duplicates
+covs.site.ceb <- covs.site.ceb[!duplicated(covs.site.ceb),]
+#need to remove for 'unmarked'
+covs.site.ceb$site <- NULL
+head(covs.site.ceb)
+
+
+#sampling length
+(c <- length(civet_edry_before))
+p <- length(sites.ceb)
+time.ceb <- as.factor(rep(c(1:c),p))
+
+
+covs.obc.ceb <- data.frame(time.ceb)
+
+#create the unmarked dataframe
+camtrap.ceb <- unmarkedFrameOccu(y = civet_edry_before, siteCovs = covs.site.ceb, obsCovs = covs.obc.ceb)
+summary(camtrap.ceb)
+
+(naive_occ_ceb <- sum(ifelse(rowSums(civet_edry_before, na.rm = T)>0,1,0)))/nrow(civet_edry_before[1])
+#0.5263158--> 52.6% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+fml.ceb <- occu(~1 ~1, camtrap.ceb)
+fml.ceb
+
+#backtransform detection probability to original scale
+backTransform(fml.ceb, 'det')
+#12.4% detection probability
+
+#constant detection, occupancy predicted by habitat type
+fml.ceb2 <- occu(~1 ~hab_type, camtrap.ceb)
+fml.ceb2
+
+#backtransform to og scale
+backTransform(fml.ceb2, 'det')
+
+#constant detection, occupancy predicted by ground cover
+fml.ceb3 <- occu(~1 ~ground_cover, camtrap.ceb)
+fml.ceb3
+
+#backtransform to og scale
+backTransform(fml.ceb3, 'det')
+
+#detection impacted by time, constant occupancy
+fml.ceb4 <- occu(~time.ewb ~1, camtrap.ceb)
+fml.ceb4
+
+backTransform(fml.ceb4, 'det')
+
+########################################################################
+#CIVET EDRY AFTER WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.cea <- covs.site[c("siteid", "hab_type", "ground_cover")]
+covs.site.cea <- covs.site.cea[covs.site$siteid %in% 
+                                 sites.cea,]
+
+covs.site.cea <- covs.site.cea[!duplicated(covs.site.cea),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.cea$tag <- paste(covs.site.cea$siteid, covs.site.cea$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.cea <- covs.site.cea[!duplicated(covs.site.cea$tag),]
+#remove tag identifier
+covs.site.cea$tag <- NULL
+
+head(covs.site.cea)
+names(covs.site.cea)[1] <- "site"
+head(covs.site.cea)
+
+#remove any potential duplicates
+covs.site.cea <- covs.site.cea[!duplicated(covs.site.cea),]
+#need to remove for 'unmarked'
+covs.site.cea$site <- NULL
+head(covs.site.cea)
+
+
+#sampling length
+(d <- length(civet_edry_after))
+q <- length(sites.cea)
+time.cea <- as.factor(rep(c(1:d),q))
+
+
+covs.obc.cwa <- data.frame(time.cwa)
+
+#create the unmarked dataframe
+camtrap.cea <- unmarkedFrameOccu(y = civet_edry_after, siteCovs = covs.site.cea, obsCovs = covs.obc.cea)
+summary(camtrap.cea)
+
+(naive_occ_cea <- sum(ifelse(rowSums(civet_edry_after, na.rm = T)>0,1,0)))/nrow(civet_edry_after[1])
+#0.4324324--> 43.2% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+fml.cea <- occu(~1 ~1, camtrap.cea)
+fml.cea
+
+#backtransform detection probability to original scale
+backTransform(fml.cea, 'det')
+#7.8% detection probability
+
+#constant detection, occupancy predicted by habitat type
+fml.cea2 <- occu(~1 ~hab_type, camtrap.cea)
+fml.cea2
+
+#backtransform to og scale
+backTransform(fml.cea2, 'det')
+
+#constant detection, occupancy predicted by ground cover
+fml.cea3 <- occu(~1 ~ground_cover, camtrap.cea)
+
+#backtransform to og scale
+backTransform(fml.cea3, 'det')
+
+#detection impacted by time, constant occupancy
+fml.cea4 <- occu(~time.cea ~1, camtrap.cwe)
+fml.cea4
+
+backTransform(fml.cea4, 'det')
+
+########################################################################
+#GENET EDRY BEFORE WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.geb <- covs.site[c("siteid", "hab_type", "ground_cover")]
+covs.site.geb <- covs.site.geb[covs.site$siteid %in% 
+                                 sites.geb,]
+
+covs.site.geb <- covs.site.geb[!duplicated(covs.site.geb),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.geb$tag <- paste(covs.site.geb$siteid, covs.site.geb$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.geb <- covs.site.geb[!duplicated(covs.site.geb$tag),]
+#remove tag identifier
+covs.site.geb$tag <- NULL
+
+head(covs.site.geb)
+names(covs.site.geb)[1] <- "site"
+head(covs.site.geb)
+
+#remove any potential duplicates
+covs.site.geb <- covs.site.geb[!duplicated(covs.site.geb),]
+#need to remove for 'unmarked'
+covs.site.geb$site <- NULL
+head(covs.site.geb)
+
+
+#sampling length
+(e <- length(genet_edry_before))
+r <- length(sites.geb)
+time.geb <- as.factor(rep(c(1:e),r))
+
+
+covs.obc.geb <- data.frame(time.geb)
+
+#create the unmarked dataframe
+camtrap.geb <- unmarkedFrameOccu(y = genet_edry_before, siteCovs = covs.site.geb, obsCovs = covs.obc.geb)
+summary(camtrap.geb)
+
+(naive_occ_geb <- sum(ifelse(rowSums(genet_edry_before, na.rm = T)>0,1,0)))/nrow(genet_edry_before[1])
+#0.5614035--> 56.1% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+fml.geb <- occu(~1 ~1, camtrap.geb)
+fml.geb
+
+#backtransform detection probability to original scale
+backTransform(fml.geb, 'det')
+#51.5% detection probability
+
+#constant detection, occupancy predicted by habitat type
+fml.geb2 <- occu(~1 ~hab_type, camtrap.geb)
+fml.geb2
+
+#backtransform to og scale
+backTransform(fml.geb2, 'det')
+
+#constant detection, occupancy predicted by ground cover
+fml.geb3 <- occu(~1 ~ground_cover, camtrap.geb)
+
+#backtransform to og scale
+backTransform(fml.geb3, 'det')
+
+#detection impacted by time, constant occupancy
+fml.geb4 <- occu(~time.geb ~1, camtrap.geb)
+fml.geb4
+
+backTransform(fml.geb4, 'det')
+
+####################################################################################
+#GENET WET SEASON AFTER WILD DOG INTRODUCTION
+
+covs.site <- read.csv("covariates.csv")
+covs.site.gea <- covs.site[c("siteid", "hab_type", "ground_cover")]
+covs.site.gea <- covs.site.gea[covs.site$siteid %in% 
+                                 sites.gea,]
+
+covs.site.gea <- covs.site.gea[!duplicated(covs.site.gea),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.gea$tag <- paste(covs.site.gea$siteid, covs.site.gea$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.gea <- covs.site.gea[!duplicated(covs.site.gea$tag),]
+#remove tag identifier
+covs.site.gea$tag <- NULL
+
+head(covs.site.gea)
+names(covs.site.gea)[1] <- "site"
+head(covs.site.gea)
+
+#remove any potential duplicates
+covs.site.gea <- covs.site.gea[!duplicated(covs.site.gea),]
+#need to remove for 'unmarked'
+covs.site.gea$site <- NULL
+head(covs.site.gea)
+
+
+#sampling length
+(f <- length(genet_edry_after))
+s <- length(sites.gea)
+time.gea <- as.factor(rep(c(1:f),s))
+
+
+covs.obc.gea <- data.frame(time.gea)
+
+#create the unmarked dataframe
+camtrap.gea <- unmarkedFrameOccu(y = genet_edry_after, siteCovs = covs.site.gea, obsCovs = covs.obc.gea)
+summary(camtrap.gea)
+
+(naive_occ_gea <- sum(ifelse(rowSums(genet_edry_after, na.rm = T)>0,1,0)))/nrow(genet_edry_after[1])
+#0.3513514--> 35.1% of sites had baboons present in the wet season before wild dog introduction
+
+#constant detection, constant occupancy
+fml.gea <- occu(~1 ~1, camtrap.gea)
+fml.gea
+
+#backtransform detection probability to original scale
+backTransform(fml.gea, 'det')
+#-2.38detection probability
+
+#constant detection, occupancy predicted by habitat type
+fml.gea2 <- occu(~1 ~hab_type, camtrap.gea)
+fml.gea2
+
+#backtransform to og scale
+backTransform(fml.gea2, 'det')
+
+#constant detection, occupancy predicted by ground cover
+fml.gea3 <- occu(~1 ~ground_cover, camtrap.gea)
+
+#backtransform to og scale
+backTransform(fml.gea3, 'det')
+
+#detection impacted by time, constant occupancy
+fml.gea4 <- occu(~time.gea ~1, camtrap.gea)
+fml.gea4
+
+backTransform(fml.gea4, 'det')
