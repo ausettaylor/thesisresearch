@@ -1,0 +1,1092 @@
+#single season occupancy analyses, need to separate by wet, dry, and late dry!!
+
+#install necessary packages
+install.packages('unmarked')
+
+#load necessary packages
+library(unmarked)
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(tidyr)
+#need this for join function??
+
+#set working directory to the folder with the metadata csv file
+setwd("~/Desktop/thesis")
+
+#read in the data 
+#do the spatial analysis BY SPECIES starting with baboons
+#select data for only focal species
+data <- read.csv("thesis_data.csv")
+
+###############################################################################
+#BABOON WET SEASON BEFORE AFRICAN WILD DOG INTRODUCTION#
+
+baboon_wet_before <- data[data$season_year == "Wet 2017"
+                          & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_bwb <- min(baboon_wet_before$DateTime)
+max_date_bwb <- max(baboon_wet_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_wet_before$Date <- strptime(baboon_wet_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_wet_before$week <- week(baboon_wet_before$Date)
+
+names(baboon_wet_before)[1] <- "site"
+baboon_wet_before <- baboon_wet_before[c("site", "week")]
+baboon_wet_before <- baboon_wet_before[!duplicated(baboon_wet_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_wet_before$week)
+baboon_wet_before$week <- 
+  ifelse(baboon_wet_before$week <48,
+         baboon_wet_before$week + 53,
+         baboon_wet_before$week)
+#make occupancy column
+baboon_wet_before$occu <- 1
+
+head(baboon_wet_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bwb <- strptime(min_date_bwb, "%Y-%m-%d")
+max_date_bwb <- strptime(max_date_bwb, "%Y-%m-%d")
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bwb <- seq(min_date_bwb, max_date_bwb, by="days")
+#turn this list into characters
+seqdates.bwb <- as.character(seqdates.bwb)
+#chop off the time part of the character string
+seqdates.bwb <- substr(seqdates.bwb, 1, 10)
+
+se_baboon_wet_before <- searcheffort[searcheffort$date %in%
+                                       seqdates.bwb,]
+se_baboon_wet_before$date <- NULL
+se_baboon_wet_before$season <- NULL
+#join search effort and data
+baboon_wet_before <- join(se_baboon_wet_before, baboon_wet_before, type = "left"); head(baboon_wet_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_wet_before[is.na(baboon_wet_before)] <- 0
+head(baboon_wet_before)
+table(baboon_wet_before$occu)
+
+#there's duplicates, need to fix it
+baboon_wet_before <- baboon_wet_before[!duplicated(baboon_wet_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_wet_before <- spread(baboon_wet_before, week, occu); head(baboon_wet_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bwb <- unique(baboon_wet_before$site)
+#now data contains just detection histories
+baboon_wet_before$site <- NULL
+head(baboon_wet_before)
+
+###############################################################################
+#BABOON WET SEASON AFTER WILD DOG INTRODUCTION
+
+baboon_wet_after <- data[data$season_year == "Wet 2019"
+                         & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_bwa <- min(baboon_wet_after$DateTime)
+max_date_bwa <- max(baboon_wet_after$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_wet_after$Date <- strptime(baboon_wet_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_wet_after$week <- week(baboon_wet_after$Date)
+
+names(baboon_wet_after)[1] <- "site"
+baboon_wet_after <- baboon_wet_after[c("site", "week")]
+baboon_wet_after <- baboon_wet_after[!duplicated(baboon_wet_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_wet_after$week)
+baboon_wet_after$week <- 
+  ifelse(baboon_wet_after$week <48,
+         baboon_wet_after$week + 53,
+         baboon_wet_after$week)
+#make occupancy column
+baboon_wet_after$occu <- 1
+head(baboon_wet_after)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bwa <- strptime(min_date_bwa, "%Y-%m-%d")
+max_date_bwa <- strptime(max_date_bwa, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bwa <- seq(min_date_bwa, max_date_bwa, by="days")
+#turn this list into characters
+seqdates.bwa <- as.character(seqdates.bwa)
+#chop off the time part of the character string
+seqdates.bwa <- substr(seqdates.bwa, 1, 10)
+
+se_baboon_wet_after <- searcheffort[searcheffort$date %in%
+                                      seqdates.bwa,]
+se_baboon_wet_after$date <- NULL
+se_baboon_wet_after$season <- NULL
+#join search effort and data
+baboon_wet_after <- join(se_baboon_wet_after, baboon_wet_after, type = "left"); head(baboon_wet_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_wet_after[is.na(baboon_wet_after)] <- 0
+head(baboon_wet_after)
+table(baboon_wet_after$occu)
+
+#there's duplicates, need to fix it
+baboon_wet_after <- baboon_wet_after[!duplicated(baboon_wet_after),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_wet_after <- spread(baboon_wet_after, week, occu); head(baboon_wet_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bwa <- unique(baboon_wet_after$site)
+#now data contains just detection histories
+baboon_wet_after$site <- NULL
+head(baboon_wet_after)
+
+#BABOON EDRY SEASON BEFORE AFRICAN WILD DOG INTRODUCTION#
+
+baboon_edry_before <- data[data$season_year == "Early Dry 2017"
+                           & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_beb <- min(baboon_edry_before$DateTime)
+max_date_beb <- max(baboon_edry_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_edry_before$Date <- strptime(baboon_edry_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_edry_before$week <- week(baboon_edry_before$Date)
+
+names(baboon_edry_before)[1] <- "site"
+baboon_edry_before <- baboon_edry_before[c("site", "week")]
+baboon_edry_before <- baboon_edry_before[!duplicated(baboon_edry_before),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_edry_before$week)
+
+#make occupancy column
+baboon_edry_before$occu <- 1
+
+head(baboon_edry_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_beb <- strptime(min_date_beb, "%Y-%m-%d")
+max_date_beb <- strptime(max_date_beb, "%Y-%m-%d")
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.beb <- seq(min_date_beb, max_date_beb, by="days")
+#turn this list into characters
+seqdates.beb <- as.character(seqdates.beb)
+#chop off the time part of the character string
+seqdates.beb <- substr(seqdates.beb, 1, 10)
+
+se_baboon_edry_before <- searcheffort[searcheffort$date %in%
+                                        seqdates.beb,]
+se_baboon_edry_before$date <- NULL
+se_baboon_edry_before$season <- NULL
+#join search effort and data
+baboon_edry_before <- join(se_baboon_edry_before, baboon_edry_before, type = "left"); head(baboon_edry_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_edry_before[is.na(baboon_edry_before)] <- 0
+head(baboon_edry_before)
+table(baboon_edry_before$occu)
+
+#there's duplicates, need to fix it
+baboon_edry_before <- baboon_edry_before[!duplicated(baboon_edry_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_edry_before <- spread(baboon_edry_before, week, occu); head(baboon_edry_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.beb <- unique(baboon_edry_before$site)
+#now data contains just detection histories
+baboon_edry_before$site <- NULL
+head(baboon_edry_before)
+
+###############################################################################
+#BABOON EDRY SEASON AFTER WILD DOG INTRODUCTION
+
+baboon_edry_after <- data[data$season_year == "Early Dry 2019"
+                          & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_bea <- min(baboon_edry_after$DateTime)
+max_date_bea <- max(baboon_edry_after$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_edry_after$Date <- strptime(baboon_edry_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_edry_after$week <- week(baboon_edry_after$Date)
+
+names(baboon_edry_after)[1] <- "site"
+baboon_edry_after <- baboon_edry_after[c("site", "week")]
+baboon_edry_after <- baboon_edry_after[!duplicated(baboon_edry_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_edry_after$week)
+
+#make occupancy column
+baboon_edry_after$occu <- 1
+head(baboon_edry_after)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bea <- strptime(min_date_bea, "%Y-%m-%d")
+max_date_bea <- strptime(max_date_bea, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bea <- seq(min_date_bea, max_date_bea, by="days")
+#turn this list into characters
+seqdates.bea <- as.character(seqdates.bea)
+#chop off the time part of the character string
+seqdates.bea <- substr(seqdates.bea, 1, 10)
+
+se_baboon_edry_after <- searcheffort[searcheffort$date %in%
+                                       seqdates.bea,]
+se_baboon_edry_after$date <- NULL
+se_baboon_edry_after$season <- NULL
+#join search effort and data
+baboon_edry_after <- join(se_baboon_edry_after, baboon_edry_after, type = "left"); head(baboon_edry_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_edry_after[is.na(baboon_edry_after)] <- 0
+head(baboon_edry_after)
+table(baboon_edry_after$occu)
+
+#there's duplicates, need to fix it
+baboon_edry_after <- baboon_edry_after[!duplicated(baboon_edry_after),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_edry_after <- spread(baboon_edry_after, week, occu); head(baboon_edry_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bea <- unique(baboon_edry_after$site)
+#now data contains just detection histories
+baboon_edry_after$site <- NULL
+head(baboon_edry_after)
+
+###################################################################################
+#BABOON LATE DRY BEFORE ANALYSIS
+baboon_ldry_before <- data[data$season_year == "Late Dry 2017"
+                           & data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_blb <- min(baboon_ldry_before$DateTime)
+max_date_blb <- max(baboon_ldry_before$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_ldry_before$Date <- strptime(baboon_ldry_before$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_ldry_before$week <- week(baboon_ldry_before$Date)
+
+names(baboon_ldry_before)[1] <- "site"
+baboon_ldry_before <- baboon_ldry_before[c("site", "week")]
+baboon_ldry_before <- baboon_ldry_before[!duplicated(baboon_ldry_before),]
+
+unique(baboon_ldry_before$week)
+
+#make occupancy column
+baboon_ldry_before$occu <- 1
+
+head(baboon_ldry_before)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_blb <- strptime(min_date_blb, "%Y-%m-%d")
+max_date_blb <- strptime(max_date_blb, "%Y-%m-%d")
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.blb <- seq(min_date_blb, max_date_blb, by="days")
+#turn this list into characters
+seqdates.blb <- as.character(seqdates.blb)
+#chop off the time part of the character string
+seqdates.blb <- substr(seqdates.blb, 1, 10)
+
+se_baboon_ldry_before <- searcheffort[searcheffort$date %in%
+                                        seqdates.blb,]
+se_baboon_ldry_before$date <- NULL
+se_baboon_ldry_before$season <- NULL
+#join search effort and data
+baboon_ldry_before <- join(se_baboon_ldry_before, baboon_ldry_before, type = "left"); head(baboon_ldry_before)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_ldry_before[is.na(baboon_ldry_before)] <- 0
+head(baboon_ldry_before)
+table(baboon_ldry_before$occu)
+
+#there's duplicates, need to fix it
+baboon_ldry_before <- baboon_ldry_before[!duplicated(baboon_ldry_before),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_ldry_before <- spread(baboon_ldry_before, week, occu); head(baboon_ldry_before)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.blb <- unique(baboon_ldry_before$site)
+#now data contains just detection histories
+baboon_ldry_before$site <- NULL
+head(baboon_ldry_before)
+
+###############################################################################
+#BABOON LDRY SEASON AFTER WILD DOG INTRODUCTION
+
+baboon_ldry_after <- data[data$Species == "Baboon",]
+
+#find the min/max date of the new dataframes!
+#you have to do this for every data frame
+min_date_bla <- min(baboon_ldry_after$DateTime)
+max_date_bla <- max(baboon_ldry_after$DateTime)
+
+#combine sightings by week
+#step 1 convert date into an actual date, instead of character
+baboon_ldry_after$Date <- strptime(baboon_ldry_after$Date, "%Y-%m-%d")
+#step 2: organize dates into weeks
+baboon_ldry_after$week <- week(baboon_ldry_after$Date)
+
+names(baboon_ldry_after)[1] <- "site"
+baboon_ldry_after <- baboon_ldry_after[c("site", "week")]
+baboon_ldry_after <- baboon_ldry_after[!duplicated(baboon_ldry_after),]
+
+#need to change week column to make wet season data continuous (add year to the end of season)
+unique(baboon_ldry_after$week)
+
+#make occupancy column
+baboon_ldry_after$occu <- 1
+head(baboon_ldry_after)
+
+#load in search effort 
+searcheffort <- read.csv("SearchEffort.csv") 
+
+#need to turn search effort date from "character" to a date
+searcheffort$date <- strptime(searcheffort$date, "%m/%d/%y")
+searcheffort$week <- week(searcheffort$date)
+#now put it back into a character
+searcheffort$date <- as.character(searcheffort$date)
+
+#need to turn min/max dataframes to have their date information as a date not character
+min_date_bla <- strptime(min_date_bla, "%Y-%m-%d")
+max_date_bla <- strptime(max_date_bla, "%Y-%m-%d")
+
+#make a vector that's a sequence of all the dates between min/max date
+seqdates.bla <- seq(min_date_bla, max_date_bla, by="days")
+#turn this list into characters
+seqdates.bla <- as.character(seqdates.bla)
+#chop off the time part of the character string
+seqdates.bla <- substr(seqdates.bla, 1, 10)
+
+se_baboon_ldry_after <- searcheffort[searcheffort$date %in%
+                                       seqdates.bla,]
+se_baboon_ldry_after$date <- NULL
+se_baboon_ldry_after$season <- NULL
+#join search effort and data
+baboon_ldry_after <- join(se_baboon_ldry_after, baboon_ldry_after, type = "left"); head(baboon_ldry_after)
+#NAs when cams on but no sightings; change NAs to 0s for analysis
+baboon_ldry_after[is.na(baboon_ldry_after)] <- 0
+head(baboon_ldry_after)
+table(baboon_ldry_after$occu)
+
+#there's duplicates, need to fix it
+baboon_ldry_after <- baboon_ldry_after[!duplicated(baboon_ldry_after),]
+
+#convert long dataframe into a wide format for the unmarked package
+baboon_ldry_after <- spread(baboon_ldry_after, week, occu); head(baboon_ldry_after)
+
+#make a list of our camera trap sites and remove column from dataframe
+sites.bla <- unique(baboon_ldry_after$site)
+#now data contains just detection histories
+baboon_ldry_after$site <- NULL
+head(baboon_ldry_after)
+
+############################################################################
+#CREATING CO VARIATE DATA FRAME BABOON WET BEFORE#
+
+covs.site <- read.csv("covariates3.csv")
+covs.site.bwb <- covs.site[c("siteid", "hab_type", "ground_cover", "height_cm", "angle", "detect_obscured",
+                             "lake_dist", "river_dist")]
+covs.site.bwb <- covs.site.bwb[covs.site.bwb$siteid %in% 
+                                 sites.bwb,]
+
+covs.site.bwb <- covs.site.bwb[!duplicated(covs.site.bwb),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.bwb$tag <- paste(covs.site.bwb$siteid, covs.site.bwb$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.bwb <- covs.site.bwb[!duplicated(covs.site.bwb$tag),]
+#remove tag identifier
+covs.site.bwb$tag <- NULL
+
+covs.site.bwb$lake_dist <- covs.site.bwb$lake_dist/1000
+covs.site.bwb$river_dist <- covs.site.bwb$river_dist/1000
+
+head(covs.site.bwb)
+names(covs.site.bwb)[1] <- "site"
+head(covs.site.bwb)
+
+#remove any potential duplicates
+covs.site.bwb <- covs.site.bwb[!duplicated(covs.site.bwb),]
+#need to remove for 'unmarked'
+covs.site.bwb$site <- NULL
+head(covs.site.bwb)
+
+#sampling length
+(a <- length(baboon_wet_before))
+n <- length(sites.bwb)
+time.bwb <- as.factor(rep(c(1:a),n))
+
+covs.obc.bwb <- data.frame(time.bwb)
+
+#create the unmarked dataframe
+camtrap.bwb <- unmarkedFrameOccu(y = baboon_wet_before, siteCovs = covs.site.bwb, obsCovs = covs.obc.bwb)
+summary(camtrap.bwb)
+
+(naive_occ_bwb <- sum(ifelse(rowSums(baboon_wet_before, na.rm = T)>0,1,0)))/nrow(baboon_wet_before[1])
+#0.9649123 --> 96.5% of sites had baboons present in the wet season before wild dog introduction
+
+#STEP ONE, DETERMINE THE DETECTION VARIABLE THAT WORKS BEST FOR BABOONS
+
+#constant detection, constant occupancy
+fml.bwb <- occu(~1 ~1, camtrap.bwb)
+fml.bwb
+
+#backtransform detection probability to original scale
+backTransform(fml.bwb, 'det')
+#29.3% detection probability
+
+#detection based on height of camera, constant occupancy
+fml2.bwb <- occu(~height_cm ~1, camtrap.bwb)
+fml2.bwb
+
+backTransform(fml2.bwb, 'det')
+
+#detection based on binary if detection is obscured or not, constant occupancy
+fml3.bwb <- occu(~detect_obscured ~1, camtrap.bwb)
+fml3.bwb
+
+backTransform(fml3.bwb, 'det')
+
+#detection based on camera angle, constant occupancy
+fml4.bwb <- occu(~angle ~1, camtrap.bwb)
+fml4.bwb
+
+
+#to compare how well the different detection models fit the data, we add the models to a list
+fmlist.det.bwb <- fitList(
+  "p(.)psi(.)" = fml.bwb,
+  "p(height)psi(.)" = fml2.bwb,
+  "p(detobscured)psi(.)" = fml3.bwb,
+  "p(angle)psi(.)" = fml4.bwb
+)
+
+modSel(fmlist.det.bwb)
+
+# detect_obscured had the lowest AIC for the ranking, so I will use it 
+#as the detection variable in the later occupancy models
+# "DETECT_OBSCURED WILL BE THE DETECTION COVARIATE FOR ALL THE LATER BABOON ANALYSIS  
+
+fml5.bwb <- occu(~detect_obscured ~hab_type, camtrap.bwb)
+fml5.bwb
+
+fml6.bwb <- occu(~detect_obscured ~ground_cover, camtrap.bwb)
+fml6.bwb
+
+fml7.bwb <- occu(~detect_obscured ~lake_dist, camtrap.bwb)
+fml7.bwb
+
+fml8.bwb <- occu(~detect_obscured ~river_dist, camtrap.bwb)
+fml8.bwb
+
+fml9.bwb <- occu(~detect_obscured ~river_dist+hab_type, camtrap.bwb)
+fml9.bwb
+
+
+fmlist2 <- fitList(
+  "p(.)psi(.)" = fml.bwb,
+  "p(detobscured)psi(.)" = fml3.bwb,
+  "p(detobscured)psi(habtype)" = fml5.bwb,
+  "p(detobscured)psi(groundcover)" = fml6.bwb,
+  "p(detobscured)psi(lakedist)" = fml7.bwb,
+  "p(detobscured)psi(riverdist)" = fml8.bwb,
+  "p(detobscured)psi(riverdist+habtype)" = fml9.bwb
+)
+modSel(fmlist2)
+summary(fml8.bwb)
+
+#create dataframes with range of covariate values we're interested in
+#predict values for covariates on ORIGINAL SCALE
+#compute expected DETECTION PROBABILITY as function of habitat type
+
+newData.bwb <- data.frame(river_dist = seq(1, 10, by=0.5))
+occu.prob.bwb <- predict(fml8.bwb, type = "state", newdata=newData.bwb,
+                        appendData = TRUE)
+head(occu.prob.bwb)
+
+#plot predictions with 95% CI
+plot(Predicted ~river_dist, occu.prob.bwb, type = "l", ylim=c(0,1),
+     xlab="River Distance (Standardized)",
+     ylab= "Expected Occupancy Probability")
+lines(lower ~ river_dist, occu.prob.bwb, type="l", col=gray(0.5))
+lines(upper ~ river_dist, occu.prob.bwb, type="l", col=gray(0.5))
+
+#plot again while converting the x-axis back to original scale
+plot(Predicted ~river_dist, occu.prob.bwb, type = "l", ylim=c(0,1),
+     xlab="River Distance in km",
+     ylab= "Expected Occupancy Probability", xaxt ="n")
+lines(lower ~ river_dist, occu.prob.bwb, type="l", col=gray(0.5))
+lines(upper ~ river_dist, occu.prob.bwb, type="l", col=gray(0.5))
+
+#######################################################################
+#start with baboon wet after wild dog reintroduction
+covs.site <- read.csv("covariates3.csv")
+covs.site.bwa <- covs.site[c("siteid", "hab_type", "ground_cover", "height_cm", "angle", "detect_obscured",
+                             "lake_dist", "river_dist")]
+covs.site.bwa <- covs.site.bwa[covs.site$siteid %in% 
+                                 sites.bwa,]
+
+covs.site.bwa <- covs.site.bwa[!duplicated(covs.site.bwa),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.bwa$tag <- paste(covs.site.bwa$siteid, covs.site.bwa$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.bwa <- covs.site.bwa[!duplicated(covs.site.bwa$tag),]
+#remove tag identifier
+covs.site.bwa$tag <- NULL
+
+covs.site.bwa$lake_dist <- covs.site.bwa$lake_dist/1000
+covs.site.bwa$river_dist <- covs.site.bwa$river_dist/1000
+
+head(covs.site.bwa)
+names(covs.site.bwa)[1] <- "site"
+head(covs.site.bwa)
+
+#remove any potential duplicates
+covs.site.bwa <- covs.site.bwa[!duplicated(covs.site.bwa),]
+#need to remove for 'unmarked'
+covs.site.bwa$site <- NULL
+head(covs.site.bwa)
+
+
+#sampling length
+(b <- length(baboon_wet_after))
+o <- length(sites.bwa)
+time.bwa <- as.factor(rep(c(1:b),o))
+
+
+covs.obc.bwa <- data.frame(time.bwa)
+
+#create the unmarked dataframe
+camtrap.bwa <- unmarkedFrameOccu(y = baboon_wet_after, siteCovs = covs.site.bwa, obsCovs = covs.obc.bwa)
+summary(camtrap.bwa)
+
+fmnull.bwa <- occu(~1 ~1,camtrap.bwa)
+fmnull.bwa
+
+fm1.bwa <- occu(~detect_obscured ~1, camtrap.bwa)
+fm1.bwa
+
+fm2.bwa <- occu(~detect_obscured ~hab_type, camtrap.bwa)
+fm2.bwa
+
+fm3.bwa <- occu(~detect_obscured ~ground_cover, camtrap.bwa)
+fm3.bwa
+
+fm4.bwa <- occu(~detect_obscured ~lake_dist, camtrap.bwa)
+fm4.bwa
+
+fm5.bwa <- occu(~detect_obscured ~river_dist, camtrap.bwa)
+fm5.bwa
+
+fm6.bwa <- occu(~detect_obscured ~river_dist+hab_type, camtrap.bwa)
+fm6.bwa
+
+fmlist3 <- fitList(
+  "p(.)psi(.)" = fmnull.bwa,
+  "p(detectobscured)psi(.)" = fm1.bwa,
+  "p(detectobscured)psi(habtype)" = fm2.bwa,
+  "p(detectobscured)psi(groundcover)" = fm3.bwa,
+  "p(detectobscured)psi(lakedist)" = fm4.bwa,
+  "p(detectobscured)psi(riverdist)" = fm5.bwa,
+  "p(detectobscured)psi(riverdist_habtype)" = fm6.bwa
+)
+
+modSel(fmlist3)
+#okay I tested out the summaries of ground cover and the standard error was SO HIGH I
+#don't think that it properly represents the data
+
+newData.bwa <- data.frame(river_dist = seq(1, 10, by=0.5))
+occu.prob.bwa <- predict(fm5.bwa, type = "state", newdata=newData.bwa,
+                         appendData = TRUE)
+head(occu.prob.bwa)
+
+#plot predictions
+plot(Predicted ~river_dist, occu.prob.bwa, type = "l", ylim=c(0,1),
+     xlab = "River Distance (Standardized)",
+     ylab = "Expected Occupancy Probability")
+lines(lower ~ river_dist, occu.prob.bwa, type = "l", col=gray(0.5))
+lines(upper ~ river_dist, occu.prob.bwa, type = "l", col=gray(0.5))
+
+#ground cover plot predictions
+newData1.bwa <- data.frame(ground_cover = seq(1, 10, by =0.5))
+occu.prob1.bwa <- predict(fm3.bwa, type = "state", newdata = newData1.bwa,
+                          appendData = TRUE)
+head(occu.prob1.bwa)
+
+plot(Predicted ~ground_cover, occu.prob1.bwa, type = "l", ylim=c(0,1),
+     xlab = "Ground Cover (Standardized)",
+     ylab = "Expected Occupancy Probility")
+lines(lower ~ ground_cover, occu.prob1.bwa, type = "l", col=gray(0.5))
+lines(upper ~ ground_cover, occu.prob1.bwa, type = "l", col=gray(0.5))
+
+################################################################################
+#EARLY DRY ANALYSIS
+#BEFORE WILD DOG 
+
+covs.site <- read.csv("covariates3.csv")
+covs.site.beb <- covs.site[c("siteid", "hab_type", "ground_cover", "height_cm", "angle", "detect_obscured",
+                             "lake_dist", "river_dist")]
+covs.site.beb <- covs.site.beb[covs.site.beb$siteid %in% 
+                                 sites.beb,]
+
+covs.site.beb <- covs.site.beb[!duplicated(covs.site.beb),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.beb$tag <- paste(covs.site.beb$siteid, covs.site.beb$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.beb <- covs.site.beb[!duplicated(covs.site.beb$tag),]
+#remove tag identifier
+covs.site.beb$tag <- NULL
+
+covs.site.beb$lake_dist <- covs.site.beb$lake_dist/1000
+covs.site.beb$river_dist <- covs.site.beb$river_dist/1000
+
+head(covs.site.beb)
+names(covs.site.beb)[1] <- "site"
+head(covs.site.beb)
+
+#remove any potential duplicates
+covs.site.beb <- covs.site.beb[!duplicated(covs.site.beb),]
+#need to remove for 'unmarked'
+covs.site.beb$site <- NULL
+head(covs.site.beb)
+
+
+#sampling length
+(a <- length(baboon_edry_before))
+n <- length(sites.beb)
+time.beb <- as.factor(rep(c(1:a),n))
+
+covs.obc.beb <- data.frame(time.beb)
+
+#create the unmarked dataframe
+camtrap.beb <- unmarkedFrameOccu(y = baboon_edry_before, siteCovs = covs.site.beb, obsCovs = covs.obc.beb)
+summary(camtrap.beb)
+
+fmnull.beb <- occu(~1 ~1,camtrap.beb)
+fmnull.beb
+
+fml1.beb <- occu(~height_cm ~1, camtrap.beb)
+fml1.beb 
+
+fml2.beb <- occu(~angle ~1, camtrap.beb)
+fml2.beb
+
+fml3.beb <- occu(~detect_obscured ~1, camtrap.beb)
+fml3.beb
+
+fmlist.det.beb <- fitList(
+  "p(.)psi(.)" = fmnull.beb,
+  "p(height)psi(.)" = fml1.beb,
+  "p(angle)psi(.)" = fml2.beb,
+  "p(detectobscured)psi(.)" = fml3.beb
+)
+modSel(fmlist.det.beb)
+
+
+#OCCUPANCY
+fm1.beb <- occu(~angle ~1, camtrap.beb)
+fm1.beb
+
+fm2.beb <- occu(~angle ~hab_type, camtrap.beb)
+fm2.beb
+
+fm3.beb <- occu(~angle ~ground_cover, camtrap.beb)
+fm3.beb
+
+fm4.beb <- occu(~angle ~lake_dist, camtrap.beb)
+fm4.beb
+
+fm5.beb <- occu(~angle ~river_dist, camtrap.beb)
+fm5.beb
+
+fm6.beb <- occu(~angle ~river_dist+hab_type, camtrap.beb)
+fm6.beb
+
+fmlist4 <- fitList(
+  "p(.)psi(.)" = fmnull.beb,
+  "p(angle)psi(.)" = fm1.beb,
+  "p(angle)psi(habtype)" = fm2.beb,
+  "p(angle)psi(groundcover)" = fm3.beb,
+  "p(angle)psi(lakedist)" = fm4.beb,
+  "p(angle)psi(riverdist)" = fm5.beb,
+  "p(angle)psi(riverdist_habtype)" = fm6.beb
+)
+
+modSel(fmlist4)
+
+#ground cover plot predictions
+newData.beb <- data.frame(ground_cover = seq(unique(covs.site.beb$ground_cover)))
+occu.prob.beb <- predict(fm3.beb, type = "state", newdata = newData.beb,
+                          appendData = TRUE)
+head(occu.prob.beb)
+
+plot(Predicted ~ground_cover, occu.prob.beb, type = "l", ylim=c(0,1),
+     xlab = "Ground Cover (Standardized)",
+     ylab = "Expected Occupancy Probility")
+lines(lower ~ 1, occu.prob.beb, type = "b", col=gray(0.5))
+lines(upper ~ 1, occu.prob.beb, type = "b", col=gray(0.5))
+
+###############
+#baboon early dry after wild dog release
+
+covs.site <- read.csv("covariates3.csv")
+covs.site.bea <- covs.site[c("siteid", "hab_type", "ground_cover", "height_cm", "angle", "detect_obscured",
+                             "lake_dist", "river_dist")]
+covs.site.bea <- covs.site.bea[covs.site$siteid %in% 
+                                 sites.bea,]
+
+covs.site.bea <- covs.site.bea[!duplicated(covs.site.bea),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.bea$tag <- paste(covs.site.bea$siteid, covs.site.bea$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.bea <- covs.site.bea[!duplicated(covs.site.bea$tag),]
+#remove tag identifier
+covs.site.bea$tag <- NULL
+
+covs.site.bea$lake_dist <- covs.site.bea$lake_dist/1000
+covs.site.bea$river_dist <- covs.site.bea$river_dist/1000
+
+head(covs.site.bea)
+names(covs.site.bea)[1] <- "site"
+head(covs.site.bea)
+
+#remove any potential duplicates
+covs.site.bea <- covs.site.bea[!duplicated(covs.site.bea),]
+#need to remove for 'unmarked'
+covs.site.bea$site <- NULL
+head(covs.site.bea)
+
+
+#sampling length
+(b <- length(baboon_edry_after))
+o <- length(sites.bea)
+time.bea <- as.factor(rep(c(1:b),o))
+
+
+covs.obc.bea <- data.frame(time.bea)
+
+#create the unmarked dataframe
+camtrap.bea <- unmarkedFrameOccu(y = baboon_edry_after, siteCovs = covs.site.bea, obsCovs = covs.obc.bea)
+summary(camtrap.bea)
+
+#OCCUPANCY
+fmnull.bea <- occu(~1 ~1,camtrap.bea)
+fmnull.bea
+
+fm1.bea <- occu(~angle ~1, camtrap.bea)
+fm1.bea
+
+fm2.bea <- occu(~angle ~hab_type, camtrap.bea)
+fm2.beb
+
+fm3.bea <- occu(~angle ~ground_cover, camtrap.bea)
+fm3.bea
+
+fm4.bea <- occu(~angle ~lake_dist, camtrap.bea)
+fm4.bea
+
+fm5.bea <- occu(~angle ~river_dist, camtrap.bea)
+fm5.bea
+
+fm6.bea <- occu(~angle ~river_dist+hab_type, camtrap.bea)
+fm6.bea
+
+fmlist5 <- fitList(
+  "p(.)psi(.)" = fmnull.bea,
+  "p(angle)psi(.)" = fm1.bea,
+  "p(angle)psi(habtype)" = fm2.bea,
+  "p(angle)psi(groundcover)" = fm3.bea,
+  "p(angle)psi(lakedist)" = fm4.bea,
+  "p(angle)psi(riverdist)" = fm5.bea,
+  "p(angle)psi(riverdist_habtype)" = fm6.bea
+)
+
+modSel(fmlist5)
+
+summary(fm3.bea)
+
+#~1 plot predictions
+newData.bea <- data.frame(ground_cover = seq(unique(covs.site.bea$ground_cover)))
+occu.prob.bea <- predict(fm3.bea, type = "state", newdata = newData.bea,
+                         appendData = TRUE)
+head(occu.prob.bea)
+
+plot(Predicted ~ground_cover, occu.prob.bea, type = "l", ylim=c(0,1),
+     xlab = "Ground Cover (Standardized)",
+     ylab = "Expected Occupancy Probility")
+lines(lower ~ ground_cover, occu.prob.bea, type = "b", col=gray(0.5))
+lines(upper ~ ground_cover, occu.prob.bea, type = "b", col=gray(0.5))
+
+newData1.bea <- data.frame(lake_dist = seq(1, 10, by = 0.5))
+occu.prob1.bea <- predict(fm4.bea, type = "state", newdata = newData1.bea,
+                          appendData = TRUE)
+head(occu.prob1.bea)
+
+plot(Predicted ~lake_dist, occu.prob1.bea, type = "l", ylim=c(0,1),
+     xlab = "Lake Distance (Standardized)",
+     ylab = "Expected Occupancy Probility")
+lines(lower ~ lake_dist, occu.prob1.bea, type = "b", col=gray(0.5))
+lines(upper ~ lake_dist, occu.prob1.bea, type = "b", col=gray(0.5))
+
+###########################################################
+#LATE DRY ANALYSIS
+covs.site <- read.csv("covariates3.csv")
+covs.site.blb <- covs.site[c("siteid", "hab_type", "ground_cover", "height_cm", "angle", "detect_obscured",
+                             "lake_dist", "river_dist")]
+covs.site.blb <- covs.site.blb[covs.site$siteid %in% 
+                                 sites.blb,]
+
+covs.site.blb <- covs.site.blb[!duplicated(covs.site.blb),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.blb$tag <- paste(covs.site.blb$siteid, covs.site.blb$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.blb <- covs.site.blb[!duplicated(covs.site.blb$tag),]
+#remove tag identifier
+covs.site.blb$tag <- NULL
+
+covs.site.blb$lake_dist <- covs.site.blb$lake_dist/1000
+covs.site.blb$river_dist <- covs.site.blb$river_dist/1000
+
+head(covs.site.blb)
+names(covs.site.blb)[1] <- "site"
+head(covs.site.blb)
+
+#remove any potential duplicates
+covs.site.blb <- covs.site.blb[!duplicated(covs.site.blb),]
+#need to remove for 'unmarked'
+covs.site.blb$site <- NULL
+head(covs.site.blb)
+
+#sampling length
+(c <- length(baboon_ldry_before))
+p <- length(sites.blb)
+time.blb <- as.factor(rep(c(1:c),p))
+
+covs.obc.blb <- data.frame(time.blb)
+
+#create the unmarked dataframe
+camtrap.blb <- unmarkedFrameOccu(y = baboon_ldry_before, siteCovs = covs.site.blb,
+                                 obsCovs = covs.obc.blb)
+summary(camtrap.blb)
+
+#detection covariate comparison
+
+fmnull.blb <- occu(~1 ~1, camtrap.blb)
+fmnull.blb
+
+fml1.blb <- occu(~height_cm ~1, camtrap.blb)
+fml1.blb 
+
+fml2.blb <- occu(~angle ~1, camtrap.blb)
+fml2.blb
+
+fml3.blb <- occu(~detect_obscured ~1, camtrap.blb)
+fml3.blb
+
+fmlist.det.blb <- fitList(
+  "p(.)psi(.)" = fmnull.blb,
+  "p(height)psi(.)" = fml1.blb,
+  "p(angle)psi(.)" = fml2.blb,
+  "p(detectobscured)psi(.)" = fml3.blb
+)
+modSel(fmlist.det.blb)
+
+#detect obscured best covariate for late dry
+#OCCUPANCY
+fm1.blb <- occu(~detect_obscured ~1, camtrap.blb)
+fm1.blb
+
+fm2.blb <- occu(~detect_obscured ~hab_type, camtrap.blb)
+fm2.blb
+
+fm3.blb <- occu(~detect_obscured ~ground_cover, camtrap.blb)
+fm3.blb
+
+fm4.blb <- occu(~detect_obscured ~lake_dist, camtrap.blb)
+fm4.blb
+
+fm5.blb <- occu(~detect_obscured ~river_dist, camtrap.blb)
+fm5.blb
+
+fm6.blb <- occu(~detect_obscured ~river_dist+hab_type, camtrap.blb)
+fm6.blb
+
+fmlist6 <- fitList(
+  "p(.)psi(.)" = fmnull.blb,
+  "p(detectob)psi(.)" = fm1.blb,
+  "p(detectob)psi(habtype)" = fm2.blb,
+  "p(detectob)psi(groundcover)" = fm3.blb,
+  "p(detectob)psi(lakedist)" = fm4.blb,
+  "p(detectob)psi(riverdist)" = fm5.blb,
+  "p(detectob)psi(riverdist_habtype)" = fm6.blb
+)
+
+modSel(fmlist6)
+
+summary(fm4.blb)
+newData.blb <- data.frame(lake_dist = seq(1, 10, by = 0.5))
+occu.prob.blb <- predict(fm4.blb, type = "state", newdata = newData.blb,
+                         appendData = TRUE)
+head(occu.prob.blb)
+
+plot(Predicted ~lake_dist, occu.prob.blb, type = "l", ylim=c(0,1),
+     xlab = "Lake Dist (Standardized)",
+     ylab = "Expected Occupancy Probility")
+lines(lower ~ lake_dist, occu.prob.blb, type = "b", col=gray(0.5))
+lines(upper ~ lake_dist, occu.prob.blb, type = "b", col=gray(0.5))
+
+##################################################################
+#LATE DRY AFTER AWD RELEASE
+
+covs.site <- read.csv("covariates3.csv")
+covs.site.bla <- covs.site[c("siteid", "hab_type", "ground_cover", "height_cm", "angle", "detect_obscured",
+                             "lake_dist", "river_dist")]
+covs.site.bla <- covs.site.bla[covs.site$siteid %in% 
+                                 sites.bla,]
+
+covs.site.bla <- covs.site.bla[!duplicated(covs.site.bla),]
+#there were duplicates for ground cover, so use siteid & hab_type as unique identifier
+covs.site.bla$tag <- paste(covs.site.bla$siteid, covs.site.bla$hab_type, sep="")
+#remove duplicate of the unique identifier of siteid & hab_type --> removing 2nd ground cover value (ASSUMPTION)
+covs.site.bla <- covs.site.bla[!duplicated(covs.site.bla$tag),]
+#remove tag identifier
+covs.site.bla$tag <- NULL
+
+covs.site.bla$lake_dist <- covs.site.bla$lake_dist/1000
+covs.site.bla$river_dist <- covs.site.bla$river_dist/1000
+
+head(covs.site.bla)
+names(covs.site.bla)[1] <- "site"
+head(covs.site.bla)
+
+#remove any potential duplicates
+covs.site.bla <- covs.site.bla[!duplicated(covs.site.bla),]
+#need to remove for 'unmarked'
+covs.site.bla$site <- NULL
+head(covs.site.bla)
+
+#sampling length
+(d <- length(baboon_ldry_after))
+q <- length(sites.bla)
+time.bla <- as.factor(rep(c(1:d),q))
+
+covs.obc.bla <- data.frame(time.bla)
+
+#create the unmarked dataframe
+camtrap.bla <- unmarkedFrameOccu(y = baboon_ldry_after, siteCovs = covs.site.bla,
+                                 obsCovs = covs.obc.bla)
+summary(camtrap.bla)
+
+#detection covariate comparison
+
+fmnull.bla <- occu(~1 ~1, camtrap.bla)
+fmnull.bla
+
+#detect obscured best covariate for late dry
+#OCCUPANCY
+fm1.bla <- occu(~detect_obscured ~1, camtrap.bla)
+fm1.bla
+
+fm2.bla <- occu(~detect_obscured ~hab_type, camtrap.bla)
+fm2.bla
+
+fm3.bla <- occu(~detect_obscured ~ground_cover, camtrap.bla)
+fm3.bla
+
+fm4.bla <- occu(~detect_obscured ~lake_dist, camtrap.bla)
+fm4.bla
+
+fm5.bla <- occu(~detect_obscured ~river_dist, camtrap.bla)
+fm5.bla
+
+fm6.bla <- occu(~detect_obscured ~river_dist+hab_type, camtrap.bla)
+fm6.bla
+
+fmlist7 <- fitList(
+  "p(.)psi(.)" = fmnull.bla,
+  "p(detectob)psi(.)" = fm1.bla,
+  "p(detectob)psi(habtype)" = fm2.bla,
+  "p(detectob)psi(groundcover)" = fm3.bla,
+  "p(detectob)psi(lakedist)" = fm4.bla,
+  "p(detectob)psi(riverdist)" = fm5.bla,
+  "p(detectob)psi(riverdist_habtype)" = fm6.bla
+)
+
+modSel(fmlist7)
+
+summary(fm3.bla)
+newData.bla <- data.frame(ground_cover = seq(unique(covs.site.bla$ground_cover)))
+occu.prob.bla <- predict(fm3.bla, type = "state", newdata = newData.bla,
+                         appendData = TRUE)
+head(occu.prob.bla)
+
+plot(Predicted ~ground_cover, occu.prob.bla, type = "l", ylim=c(0,1),
+     xlab = "Ground Cover (Standardized)",
+     ylab = "Expected Occupancy Probility")
+lines(lower ~ ground_cover, occu.prob.bla, type = "b", col=gray(0.5))
+lines(upper ~ ground_cover, occu.prob.bla, type = "b", col=gray(0.5))
